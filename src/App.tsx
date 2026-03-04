@@ -65,7 +65,7 @@ export default function App() {
           <MenuOverlay isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
           <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
           
-          <div className="perspective-[2000px]">
+          <div className="relative min-h-screen w-full perspective-[2000px]">
             <AnimatePresence mode="wait">
               {view === 'home' ? (
                 <motion.div 
