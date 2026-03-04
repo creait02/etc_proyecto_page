@@ -26,7 +26,7 @@ export default function App() {
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
   const [isContactTransition, setIsContactTransition] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [view, setView] = useState<'home' | 'projects'>('home');
+  const [view, setView] = useState<'home' | 'projects' | 'contact'>('home');
 
   // Lock body scroll when menu is open or loading
   useEffect(() => {
@@ -37,15 +37,8 @@ export default function App() {
     }
   }, [isMenuOpen, isLoading]);
 
-  const handleContactClick = async () => {
-    if (!lenisInstance) return;
-    setIsContactTransition(true);
-    lenisInstance.scrollTo('#contact', {
-      duration: 1.5,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-    });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsContactTransition(false);
+  const handleContactClick = () => {
+    setView('contact');
   };
 
   return (
@@ -61,33 +54,37 @@ export default function App() {
             onMenuClick={() => setIsMenuOpen(true)} 
             onContactClick={handleContactClick}
             onProjectsClick={() => setView('projects')}
+            onHomeClick={() => setView('home')}
           />
-          <MenuOverlay isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+          <MenuOverlay 
+            isOpen={isMenuOpen} 
+            onClose={() => setIsMenuOpen(false)} 
+            onContactClick={handleContactClick}
+            onProjectsClick={() => setView('projects')}
+          />
           <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
           
           <div className="relative min-h-screen w-full perspective-[2000px]">
             <AnimatePresence mode="wait">
-              {view === 'home' ? (
+              {view === 'home' && (
                 <motion.div 
                   key="home"
-                  initial={{ opacity: 0, rotateY: 90, scale: 0.8 }}
+                  initial={{ opacity: 0, rotateY: -90, scale: 0.8 }}
                   animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotateY: -90, scale: 0.8 }}
+                  exit={{ opacity: 0, rotateY: 90, scale: 0.8 }}
                   transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className={cn(
-                    "origin-center transition-all duration-500 ease-in-out w-full bg-black",
-                    isContactTransition ? "scale-90 blur-[2px]" : "scale-100 blur-0"
-                  )}
+                  className="origin-center w-full bg-black"
                   style={{ transformStyle: 'preserve-3d' }}
                 >
                   <main>
                     <Hero />
                     <ImmersiveProjectList onSelectProject={setSelectedProject} />
-                    <Contact />
                   </main>
                   <Footer />
                 </motion.div>
-              ) : (
+              )}
+
+              {view === 'projects' && (
                 <motion.div
                   key="projects"
                   initial={{ opacity: 0, rotateY: 90, scale: 0.8 }}
@@ -98,6 +95,19 @@ export default function App() {
                   style={{ transformStyle: 'preserve-3d' }}
                 >
                   <HorizontalProjectsGallery onClose={() => setView('home')} />
+                </motion.div>
+              )}
+
+              {view === 'contact' && (
+                <motion.div
+                  key="contact"
+                  initial={{ opacity: 0, y: '100%' }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: '100%' }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="fixed inset-0 z-40 bg-black overflow-y-auto"
+                >
+                  <Contact />
                 </motion.div>
               )}
             </AnimatePresence>

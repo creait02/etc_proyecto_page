@@ -5,9 +5,10 @@ interface HeaderProps {
   onMenuClick: () => void;
   onContactClick: () => void;
   onProjectsClick: () => void;
+  onHomeClick: () => void;
 }
 
-export default function Header({ onMenuClick, onContactClick, onProjectsClick }: HeaderProps) {
+export default function Header({ onMenuClick, onContactClick, onProjectsClick, onHomeClick }: HeaderProps) {
   return (
     <motion.header 
       initial={{ y: -100, opacity: 0 }}
@@ -16,9 +17,9 @@ export default function Header({ onMenuClick, onContactClick, onProjectsClick }:
       className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-6 md:px-12 mix-blend-difference text-white"
     >
       <div className="flex items-center gap-4">
-        <a href="/" className="text-2xl font-bold tracking-tighter uppercase font-sans">
+        <button onClick={onHomeClick} className="text-2xl font-bold tracking-tighter uppercase font-sans">
           ETC PROYECTO
-        </a>
+        </button>
       </div>
 
       <div className="flex items-center gap-8">

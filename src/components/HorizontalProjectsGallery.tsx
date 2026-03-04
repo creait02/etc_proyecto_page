@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { motion, useScroll, useTransform, MotionValue } from 'motion/react';
+import { useRef, useState } from 'react';
+import { motion, useScroll, useTransform } from 'motion/react';
 import { projects, Project } from '../data/mockData';
 import { ArrowLeft } from 'lucide-react';
 
@@ -9,6 +9,49 @@ interface HorizontalProjectsGalleryProps {
 
 export default function HorizontalProjectsGallery({ onClose }: HorizontalProjectsGalleryProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  // Duplicate projects to create a longer, more immersive carousel
+  const allProjects = [...projects, ...projects, ...projects];
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeft.current = scrollContainerRef.current.scrollLeft;
+    
+    // Disable snap while dragging for smooth movement
+    scrollContainerRef.current.style.scrollSnapType = 'none';
+    scrollContainerRef.current.style.cursor = 'grabbing';
+  };
+
+  const handleMouseLeave = () => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    setIsDragging(false);
+    
+    // Re-enable snap
+    scrollContainerRef.current.style.scrollSnapType = 'x mandatory';
+    scrollContainerRef.current.style.cursor = 'grab';
+  };
+
+  const handleMouseUp = () => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(false);
+    
+    // Re-enable snap
+    scrollContainerRef.current.style.scrollSnapType = 'x mandatory';
+    scrollContainerRef.current.style.cursor = 'grab';
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2; // Scroll speed multiplier
+    scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
+  };
   
   return (
     <div className="w-full h-full bg-[#050505] text-white overflow-hidden flex flex-col">
@@ -29,15 +72,19 @@ export default function HorizontalProjectsGallery({ onClose }: HorizontalProject
       {/* Horizontal Scroll Container */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-x-auto flex items-center px-8 md:px-12 gap-4 md:gap-8 snap-x snap-mandatory scrollbar-hide perspective-[1000px]"
+        className="flex-1 overflow-x-auto flex items-center px-8 md:px-12 gap-4 md:gap-8 snap-x snap-mandatory scrollbar-hide perspective-[1000px] cursor-grab active:cursor-grabbing"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
       >
         {/* Spacer for start */}
         <div className="w-[30vw] shrink-0" />
 
-        {projects.map((project) => (
+        {allProjects.map((project, index) => (
           <ProjectCard 
-            key={project.id} 
+            key={`${project.id}-${index}`} 
             project={project} 
             containerRef={scrollContainerRef} 
           />
