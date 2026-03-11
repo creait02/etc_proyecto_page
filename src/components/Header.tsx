@@ -1,14 +1,15 @@
 import { motion } from 'motion/react';
-import { Menu, Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HeaderProps {
   onMenuClick: () => void;
-  onContactClick: () => void;
-  onProjectsClick: () => void;
   onHomeClick: () => void;
 }
 
-export default function Header({ onMenuClick, onContactClick, onProjectsClick, onHomeClick }: HeaderProps) {
+export default function Header({ onMenuClick, onHomeClick }: HeaderProps) {
+  const { language, toggleLanguage } = useLanguage();
+
   return (
     <motion.header 
       initial={{ y: -100, opacity: 0 }}
@@ -22,28 +23,16 @@ export default function Header({ onMenuClick, onContactClick, onProjectsClick, o
         </button>
       </div>
 
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-6">
         <button 
-          onClick={onProjectsClick}
-          className="hidden md:block text-sm uppercase tracking-widest hover:opacity-70 transition-opacity"
+          onClick={toggleLanguage} 
+          className="text-sm font-medium tracking-widest hover:text-gray-400 transition-colors"
         >
-          Projects
+          {language === 'en' ? 'ES' : 'EN'}
         </button>
-        <button className="hidden md:block text-sm uppercase tracking-widest hover:opacity-70 transition-opacity">
-          Studio
+        <button onClick={onMenuClick} className="p-2 -mr-2">
+          <Menu className="w-6 h-6 cursor-pointer hover:opacity-70 transition-opacity" />
         </button>
-        <button 
-          onClick={onContactClick}
-          className="hidden md:block text-sm uppercase tracking-widest hover:opacity-70 transition-opacity"
-        >
-          Contact
-        </button>
-        <div className="flex items-center gap-4 ml-4">
-          <Search className="w-5 h-5 cursor-pointer hover:opacity-70 transition-opacity" />
-          <button onClick={onMenuClick}>
-            <Menu className="w-6 h-6 cursor-pointer hover:opacity-70 transition-opacity" />
-          </button>
-        </div>
       </div>
     </motion.header>
   );

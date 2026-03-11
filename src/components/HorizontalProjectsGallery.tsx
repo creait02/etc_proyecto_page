@@ -1,17 +1,18 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { projects, Project } from '../data/mockData';
-import { ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HorizontalProjectsGalleryProps {
-  onClose: () => void;
+  onSelectProject: (project: Project) => void;
 }
 
-export default function HorizontalProjectsGallery({ onClose }: HorizontalProjectsGalleryProps) {
+export default function HorizontalProjectsGallery({ onSelectProject }: HorizontalProjectsGalleryProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const { t } = useLanguage();
 
   // Duplicate projects to create a longer, more immersive carousel
   const allProjects = [...projects, ...projects, ...projects];
@@ -52,23 +53,25 @@ export default function HorizontalProjectsGallery({ onClose }: HorizontalProject
     const walk = (x - startX.current) * 2; // Scroll speed multiplier
     scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
   };
+
+  // Map vertical scroll to horizontal scroll
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        container.scrollLeft += e.deltaY * 2.5; 
+        e.preventDefault();
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
   
   return (
-    <div className="w-full h-full bg-[#050505] text-white overflow-hidden flex flex-col">
-      {/* Header / Navigation */}
-      <div className="flex justify-between items-center p-8 md:p-12 z-20">
-        <button 
-          onClick={onClose}
-          className="flex items-center gap-2 text-sm uppercase tracking-widest hover:text-gray-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </button>
-        <div className="text-sm uppercase tracking-widest text-gray-500 border-l border-gray-700 pl-4">
-          Services & Projects
-        </div>
-      </div>
-
+    <div className="w-full h-full bg-[#050505] text-white overflow-hidden flex flex-col relative">
       {/* Horizontal Scroll Container */}
       <div 
         ref={scrollContainerRef}
@@ -87,6 +90,9 @@ export default function HorizontalProjectsGallery({ onClose }: HorizontalProject
             key={`${project.id}-${index}`} 
             project={project} 
             containerRef={scrollContainerRef} 
+            onClick={() => {
+              if (!isDragging) onSelectProject(project);
+            }}
           />
         ))}
 
@@ -97,8 +103,9 @@ export default function HorizontalProjectsGallery({ onClose }: HorizontalProject
   );
 }
 
-function ProjectCard({ project, containerRef }: { project: Project, containerRef: React.RefObject<HTMLDivElement> }) {
+function ProjectCard({ project, containerRef, onClick }: { project: Project, containerRef: React.RefObject<HTMLDivElement>, onClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const { language } = useLanguage();
   
   const { scrollXProgress } = useScroll({
     target: ref,
@@ -125,12 +132,13 @@ function ProjectCard({ project, containerRef }: { project: Project, containerRef
           transformStyle: "preserve-3d"
         }}
         className="w-[60vw] md:w-[40vw] lg:w-[30vw] h-[50vh] md:h-[60vh] flex flex-col group cursor-pointer"
+        onClick={onClick}
       >
         <div className="relative w-full h-full overflow-hidden bg-gray-900 mb-8 rounded-sm shadow-2xl">
           <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
           <motion.img 
             src={project.image} 
-            alt={project.title} 
+            alt={language === 'es' ? project.titleEs : project.title} 
             className="w-full h-full object-cover"
           />
         </div>
@@ -140,10 +148,10 @@ function ProjectCard({ project, containerRef }: { project: Project, containerRef
           style={{ opacity }}
         >
           <h3 className="text-2xl md:text-3xl font-light uppercase tracking-tight mb-2">
-            {project.title}
+            {language === 'es' ? project.titleEs : project.title}
           </h3>
           <p className="text-xs uppercase tracking-widest text-gray-500">
-            {project.category}
+            {language === 'es' ? project.categoryEs : project.category}
           </p>
         </motion.div>
       </motion.div>

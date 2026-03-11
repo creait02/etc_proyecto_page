@@ -6,19 +6,19 @@
 import { useState, useEffect } from 'react';
 import SmoothScroll from './components/SmoothScroll';
 import Header from './components/Header';
-import Hero from './components/Hero';
-import ImmersiveProjectList from './components/ImmersiveProjectList';
+import HomeHorizontalLayout from './components/HomeHorizontalLayout';
 import Footer from './components/Footer';
 import MenuOverlay from './components/MenuOverlay';
 import CustomCursor from './components/CustomCursor';
 import Preloader from './components/Preloader';
 import Contact from './components/Contact';
-import ProjectModal from './components/ProjectModal';
+import ProjectView from './components/ProjectView';
 import HorizontalProjectsGallery from './components/HorizontalProjectsGallery';
 import { AnimatePresence, motion } from 'motion/react';
 import Lenis from 'lenis';
 import { cn } from './lib/utils';
 import { Project } from './data/mockData';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,7 +42,7 @@ export default function App() {
   };
 
   return (
-    <>
+    <LanguageProvider>
       <AnimatePresence mode="wait">
         {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}
       </AnimatePresence>
@@ -52,8 +52,6 @@ export default function App() {
           <CustomCursor />
           <Header 
             onMenuClick={() => setIsMenuOpen(true)} 
-            onContactClick={handleContactClick}
-            onProjectsClick={() => setView('projects')}
             onHomeClick={() => setView('home')}
           />
           <MenuOverlay 
@@ -61,8 +59,9 @@ export default function App() {
             onClose={() => setIsMenuOpen(false)} 
             onContactClick={handleContactClick}
             onProjectsClick={() => setView('projects')}
+            onHomeClick={() => setView('home')}
           />
-          <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+          <ProjectView project={selectedProject} onClose={() => setSelectedProject(null)} />
           
           <div className="relative min-h-screen w-full perspective-[2000px]">
             <AnimatePresence mode="wait">
@@ -73,14 +72,10 @@ export default function App() {
                   animate={{ opacity: 1, rotateY: 0, scale: 1 }}
                   exit={{ opacity: 0, rotateY: 90, scale: 0.8 }}
                   transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="origin-center w-full bg-black"
+                  className="origin-center w-full bg-black h-screen overflow-hidden"
                   style={{ transformStyle: 'preserve-3d' }}
                 >
-                  <main>
-                    <Hero />
-                    <ImmersiveProjectList onSelectProject={setSelectedProject} />
-                  </main>
-                  <Footer />
+                  <HomeHorizontalLayout onSelectProject={setSelectedProject} />
                 </motion.div>
               )}
 
@@ -94,7 +89,7 @@ export default function App() {
                   className="fixed inset-0 z-40 bg-black"
                   style={{ transformStyle: 'preserve-3d' }}
                 >
-                  <HorizontalProjectsGallery onClose={() => setView('home')} />
+                  <HorizontalProjectsGallery onSelectProject={setSelectedProject} />
                 </motion.div>
               )}
 
@@ -105,7 +100,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: '100%' }}
                   transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="fixed inset-0 z-40 bg-black overflow-y-auto"
+                  className="w-full z-40 bg-white"
                 >
                   <Contact />
                 </motion.div>
@@ -114,6 +109,6 @@ export default function App() {
           </div>
         </div>
       </SmoothScroll>
-    </>
+    </LanguageProvider>
   );
 }
