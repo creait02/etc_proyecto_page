@@ -17,13 +17,32 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    let isScrolling = false;
+
     const handleWheel = (e: WheelEvent) => {
       // If purely vertical scroll
       if (e.deltaY !== 0) {
-        // Scroll horizontally
-        // Multiplier to make it easier to snap to next slide
-        container.scrollLeft += e.deltaY * 2.5; 
         e.preventDefault();
+        
+        if (isScrolling) return;
+        
+        // Ignore very small trackpad movements to prevent accidental triggers
+        if (Math.abs(e.deltaY) < 10) return;
+
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+          // Scroll Right (Down)
+          container.scrollTo({ left: container.clientWidth, behavior: 'smooth' });
+        } else {
+          // Scroll Left (Up)
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        }
+
+        // Cooldown to prevent multiple scrolls from a single swipe/wheel spin
+        setTimeout(() => {
+          isScrolling = false;
+        }, 800);
       }
     };
 
@@ -83,7 +102,7 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
               transition={{ delay: 1 }}
               className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light"
             >
-              ETC PROYECTO is an award winning architectural and interior design studio based in London.
+              ETC PROYECTO is an award winning architectural and interior design studio based in Caracas.
             </motion.p>
           </div>
         </div>

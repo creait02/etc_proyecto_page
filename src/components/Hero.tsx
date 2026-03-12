@@ -33,7 +33,7 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         >
           <h2 className="text-white/80 text-sm md:text-base uppercase tracking-[0.2em] mb-4">
-            London Design Studio
+            Caracas Design Studio
           </h2>
           <h1 className="text-white text-5xl md:text-7xl lg:text-9xl font-light tracking-tight uppercase leading-[0.9]">
             Design <br />
@@ -49,7 +49,7 @@ export default function Hero() {
         className="absolute bottom-12 left-6 md:left-12 z-20 max-w-md"
       >
         <p className="text-white/90 text-sm md:text-base font-light leading-relaxed mb-8">
-          ETC PROYECTO is an award winning architectural and interior design studio based in London.
+          ETC PROYECTO is an award winning architectural and interior design studio based in Caracas.
         </p>
         
         <motion.div 

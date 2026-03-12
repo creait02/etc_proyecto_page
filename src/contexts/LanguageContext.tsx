@@ -23,7 +23,7 @@ const translations = {
     'services.conservation': 'Conservation & Heritage Design',
     'services.create': 'Create & Construct',
     'home.designMatters': 'DESIGN MATTERS',
-    'home.studio': 'LONDON DESIGN STUDIO',
+    'home.studio': 'CARACAS DESIGN STUDIO',
     'home.viewProject': 'View Project',
     'home.scroll': 'Scroll to explore',
     'contact.getInTouch': 'Get in Touch',
@@ -47,7 +47,7 @@ const translations = {
     'project.back': 'Back to Gallery',
     'project.backHome': 'Back to Home',
     'project.services': 'Services & Projects',
-    'project.studio': 'ARCHITECTURE AND INTERIOR DESIGN STUDIO LONDON'
+    'project.studio': 'ARCHITECTURE AND INTERIOR DESIGN STUDIO CARACAS'
   },
   es: {
     'menu.projects': 'Proyectos',
@@ -63,7 +63,7 @@ const translations = {
     'services.conservation': 'Diseño de Conservación y Patrimonio',
     'services.create': 'Creación y Construcción',
     'home.designMatters': 'EL DISEÑO IMPORTA',
-    'home.studio': 'ESTUDIO DE DISEÑO EN LONDRES',
+    'home.studio': 'ESTUDIO DE DISEÑO EN CARACAS',
     'home.viewProject': 'Ver Proyecto',
     'home.scroll': 'Desplázate para explorar',
     'contact.getInTouch': 'Ponte en contacto',
@@ -87,7 +87,7 @@ const translations = {
     'project.back': 'Volver a la Galería',
     'project.backHome': 'Volver al Inicio',
     'project.services': 'Servicios y Proyectos',
-    'project.studio': 'ESTUDIO DE ARQUITECTURA Y DISEÑO DE INTERIORES LONDRES'
+    'project.studio': 'ESTUDIO DE ARQUITECTURA Y DISEÑO DE INTERIORES CARACAS'
   }
 };
 
