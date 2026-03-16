@@ -3,10 +3,12 @@ import { Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 import Footer from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteData } from '../contexts/SiteContext';
 
 export default function Contact() {
   const formRef = useRef<HTMLFormElement>(null);
   const { t } = useLanguage();
+  const { settings } = useSiteData();
   
   // 3D Tilt Logic
   const x = useMotionValue(0);
@@ -65,8 +67,15 @@ export default function Contact() {
             </p>
             
             <div className="space-y-2 text-sm font-mono text-gray-500">
-              <p>INFO@ETCPROYECTO.COM</p>
-              <p>+44 (0) 20 1234 5678</p>
+              {settings?.contact_email && <p>{settings.contact_email}</p>}
+              {settings?.contact_phone && <p>{settings.contact_phone}</p>}
+              {settings?.contact_address && <p>{settings.contact_address}</p>}
+              {!settings?.contact_email && !settings?.contact_phone && !settings?.contact_address && (
+                <>
+                  <p>INFO@ETCPROYECTO.COM</p>
+                  <p>+44 (0) 20 1234 5678</p>
+                </>
+              )}
             </div>
           </motion.div>
 
@@ -84,9 +93,9 @@ export default function Contact() {
             <div className="absolute inset-0 bg-gradient-to-br from-black/5 to-transparent rounded-2xl pointer-events-none" />
 
             <div className="space-y-8" style={{ transform: "translateZ(20px)" }}>
-              <InputGroup label={t('contact.name')} type="text" placeholder="John Doe" />
-              <InputGroup label={t('contact.email')} type="email" placeholder="john@example.com" />
-              <InputGroup label={t('contact.message')} type="textarea" placeholder="Tell us about your project..." />
+              <InputGroup label={t('contact.name')} type="text" placeholder={t('contact.placeholder.name')} />
+              <InputGroup label={t('contact.email')} type="email" placeholder={t('contact.placeholder.email')} />
+              <InputGroup label={t('contact.message')} type="textarea" placeholder={t('contact.placeholder.message')} />
               
               <motion.button
                 whileHover={{ scale: 1.02 }}

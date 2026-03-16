@@ -113,8 +113,8 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
               <div className="absolute inset-0 z-0">
                 <motion.img
                   layoutId={`project-image-${project.id}`}
-                  src={project.image}
-                  alt={language === 'es' ? project.titleEs : project.title}
+                  src={project.image_url || project.image}
+                  alt={language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
                   className="w-full h-full object-cover opacity-60 pointer-events-none"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
@@ -127,7 +127,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
                   transition={{ delay: 0.3 }}
                   className="flex items-center flex-wrap gap-4 mb-4 text-[9px] md:text-[11px] uppercase tracking-[0.2em] text-gray-300 font-medium"
                 >
-                  <span>{language === 'es' ? project.categoryEs : project.category}</span>
+                  <span>{language === 'es' ? (project.category_es || project.categoryEs) : (project.category_en || project.category)}</span>
                   <span className="w-[1px] h-3 bg-gray-400 hidden md:inline-block"></span>
                   <span className="text-gray-400">{t('project.studio')}</span>
                 </motion.div>
@@ -138,7 +138,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
                   transition={{ delay: 0.4, duration: 0.8 }}
                   className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase"
                 >
-                  {language === 'es' ? project.titleEs : project.title}
+                  {language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
                 </motion.h1>
                 
                 <motion.p 
@@ -147,7 +147,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
                   transition={{ delay: 0.6 }}
                   className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light"
                 >
-                  {language === 'es' ? project.descriptionEs : project.description}
+                  {language === 'es' ? (project.description_es || project.descriptionEs) : (project.description_en || project.description)}
                 </motion.p>
               </div>
             </div>

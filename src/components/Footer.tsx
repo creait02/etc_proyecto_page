@@ -1,8 +1,10 @@
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteData } from '../contexts/SiteContext';
 
 export default function Footer() {
   const { t } = useLanguage();
+  const { settings } = useSiteData();
 
   return (
     <footer className="bg-black text-white py-24 px-6 md:px-12 border-t border-white/10">
@@ -17,16 +19,34 @@ export default function Footer() {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-gray-500 mb-6">{t('footer.contact')}</h4>
           <ul className="space-y-4 text-sm font-light">
-            <li><a href="#" className="hover:text-gray-300 transition-colors">info@etcproyecto.com</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">+44 (0) 20 1234 5678</a></li>
-            <li className="text-gray-400">{t('footer.location')}</li>
+            {settings?.contact_email ? (
+              <li><a href={`mailto:${settings.contact_email}`} className="hover:text-gray-300 transition-colors">{settings.contact_email}</a></li>
+            ) : (
+              <li><a href="#" className="hover:text-gray-300 transition-colors">info@etcproyecto.com</a></li>
+            )}
+            
+            {settings?.contact_phone ? (
+              <li><a href={`tel:${settings.contact_phone}`} className="hover:text-gray-300 transition-colors">{settings.contact_phone}</a></li>
+            ) : (
+              <li><a href="#" className="hover:text-gray-300 transition-colors">+44 (0) 20 1234 5678</a></li>
+            )}
+            
+            {settings?.contact_address ? (
+              <li className="text-gray-400">{settings.contact_address}</li>
+            ) : (
+              <li className="text-gray-400">{t('footer.location')}</li>
+            )}
           </ul>
         </div>
 
         <div>
           <h4 className="text-xs uppercase tracking-widest text-gray-500 mb-6">{t('footer.social')}</h4>
           <ul className="space-y-4 text-sm font-light">
-            <li><a href="#" className="hover:text-gray-300 transition-colors">Instagram</a></li>
+            {settings?.contact_instagram ? (
+              <li><a href={settings.contact_instagram} target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">Instagram</a></li>
+            ) : (
+              <li><a href="#" className="hover:text-gray-300 transition-colors">Instagram</a></li>
+            )}
             <li><a href="#" className="hover:text-gray-300 transition-colors">LinkedIn</a></li>
             <li><a href="#" className="hover:text-gray-300 transition-colors">Pinterest</a></li>
           </ul>

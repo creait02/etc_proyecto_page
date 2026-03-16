@@ -4,8 +4,19 @@ import { motion } from 'motion/react';
 export default function CustomCursor() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Hide custom cursor in admin area
+    if (window.location.pathname.startsWith('/admin')) {
+      setIsVisible(false);
+      document.body.style.cursor = 'auto'; // Ensure default cursor is visible
+      return;
+    }
+
+    // Hide default cursor on main site
+    document.body.style.cursor = 'none';
+
     const updateMousePosition = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
@@ -22,10 +33,13 @@ export default function CustomCursor() {
     window.addEventListener('mouseover', handleMouseOver);
 
     return () => {
+      document.body.style.cursor = 'auto'; // Restore default cursor
       window.removeEventListener('mousemove', updateMousePosition);
       window.removeEventListener('mouseover', handleMouseOver);
     };
   }, []);
+
+  if (!isVisible) return null;
 
   return (
     <motion.div

@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SmoothScroll from './components/SmoothScroll';
 import Header from './components/Header';
 import HomeHorizontalLayout from './components/HomeHorizontalLayout';
@@ -19,8 +20,10 @@ import Lenis from 'lenis';
 import { cn } from './lib/utils';
 import { Project } from './data/mockData';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { SiteProvider } from './contexts/SiteContext';
+import AdminApp from './admin/AdminApp';
 
-export default function App() {
+function MainSite() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
@@ -42,73 +45,86 @@ export default function App() {
   };
 
   return (
-    <LanguageProvider>
-      <AnimatePresence mode="wait">
-        {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}
-      </AnimatePresence>
-      
-      <SmoothScroll onInit={setLenisInstance}>
-        <div className="bg-black min-h-screen text-white selection:bg-white selection:text-black cursor-none">
-          <CustomCursor />
-          <Header 
-            onMenuClick={() => setIsMenuOpen(true)} 
-            onHomeClick={() => setView('home')}
-          />
-          <MenuOverlay 
-            isOpen={isMenuOpen} 
-            onClose={() => setIsMenuOpen(false)} 
-            onContactClick={handleContactClick}
-            onProjectsClick={() => setView('projects')}
-            onHomeClick={() => setView('home')}
-          />
-          <ProjectView project={selectedProject} onClose={() => setSelectedProject(null)} />
-          
-          <div className="relative min-h-screen w-full perspective-[2000px]">
-            <AnimatePresence mode="wait">
-              {view === 'home' && (
-                <motion.div 
-                  key="home"
-                  initial={{ opacity: 0, rotateY: -90, scale: 0.8 }}
-                  animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotateY: 90, scale: 0.8 }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="origin-center w-full bg-black h-screen overflow-hidden"
-                  style={{ transformStyle: 'preserve-3d' }}
-                >
-                  <HomeHorizontalLayout onSelectProject={setSelectedProject} />
-                </motion.div>
-              )}
+    <SiteProvider>
+      <LanguageProvider>
+        <AnimatePresence mode="wait">
+          {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}
+        </AnimatePresence>
+        
+        <SmoothScroll onInit={setLenisInstance}>
+          <div className="bg-black min-h-screen text-white selection:bg-white selection:text-black">
+            <CustomCursor />
+            <Header 
+              onMenuClick={() => setIsMenuOpen(true)} 
+              onHomeClick={() => setView('home')}
+            />
+            <MenuOverlay 
+              isOpen={isMenuOpen} 
+              onClose={() => setIsMenuOpen(false)} 
+              onContactClick={handleContactClick}
+              onProjectsClick={() => setView('projects')}
+              onHomeClick={() => setView('home')}
+            />
+            <ProjectView project={selectedProject} onClose={() => setSelectedProject(null)} />
+            
+            <div className="relative min-h-screen w-full perspective-[2000px]">
+              <AnimatePresence mode="wait">
+                {view === 'home' && (
+                  <motion.div 
+                    key="home"
+                    initial={{ opacity: 0, rotateY: -90, scale: 0.8 }}
+                    animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotateY: 90, scale: 0.8 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="origin-center w-full bg-black h-screen overflow-hidden"
+                    style={{ transformStyle: 'preserve-3d' }}
+                  >
+                    <HomeHorizontalLayout onSelectProject={setSelectedProject} />
+                  </motion.div>
+                )}
 
-              {view === 'projects' && (
-                <motion.div
-                  key="projects"
-                  initial={{ opacity: 0, rotateY: 90, scale: 0.8 }}
-                  animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotateY: -90, scale: 0.8 }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="fixed inset-0 z-40 bg-black"
-                  style={{ transformStyle: 'preserve-3d' }}
-                >
-                  <HorizontalProjectsGallery onSelectProject={setSelectedProject} />
-                </motion.div>
-              )}
+                {view === 'projects' && (
+                  <motion.div
+                    key="projects"
+                    initial={{ opacity: 0, rotateY: 90, scale: 0.8 }}
+                    animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotateY: -90, scale: 0.8 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="fixed inset-0 z-40 bg-black"
+                    style={{ transformStyle: 'preserve-3d' }}
+                  >
+                    <HorizontalProjectsGallery onSelectProject={setSelectedProject} />
+                  </motion.div>
+                )}
 
-              {view === 'contact' && (
-                <motion.div
-                  key="contact"
-                  initial={{ opacity: 0, y: '100%' }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: '100%' }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-full z-40 bg-white"
-                >
-                  <Contact />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {view === 'contact' && (
+                  <motion.div
+                    key="contact"
+                    initial={{ opacity: 0, y: '100%' }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: '100%' }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full z-40 bg-white"
+                  >
+                    <Contact />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
-      </SmoothScroll>
-    </LanguageProvider>
+        </SmoothScroll>
+      </LanguageProvider>
+    </SiteProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<MainSite />} />
+        <Route path="/admin/*" element={<AdminApp />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

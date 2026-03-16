@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { projects, Project } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteData } from '../contexts/SiteContext';
 
 interface HorizontalProjectsGalleryProps {
   onSelectProject: (project: Project) => void;
@@ -13,9 +14,13 @@ export default function HorizontalProjectsGallery({ onSelectProject }: Horizonta
   const startX = useRef(0);
   const scrollLeft = useRef(0);
   const { t } = useLanguage();
+  const { projects: liveProjects } = useSiteData();
+
+  // Use live projects if available, otherwise fallback to mock data
+  const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : projects;
 
   // Duplicate projects to create a longer, more immersive carousel
-  const allProjects = [...projects, ...projects, ...projects];
+  const allProjects = [...displayProjects, ...displayProjects, ...displayProjects];
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
@@ -137,8 +142,8 @@ function ProjectCard({ project, containerRef, onClick }: { project: Project, con
         <div className="relative w-full h-full overflow-hidden bg-gray-900 mb-8 rounded-sm shadow-2xl">
           <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
           <motion.img 
-            src={project.image} 
-            alt={language === 'es' ? project.titleEs : project.title} 
+            src={project.image_url || project.image} 
+            alt={language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)} 
             className="w-full h-full object-cover"
           />
         </div>
@@ -148,10 +153,10 @@ function ProjectCard({ project, containerRef, onClick }: { project: Project, con
           style={{ opacity }}
         >
           <h3 className="text-2xl md:text-3xl font-light uppercase tracking-tight mb-2">
-            {language === 'es' ? project.titleEs : project.title}
+            {language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
           </h3>
           <p className="text-xs uppercase tracking-widest text-gray-500">
-            {language === 'es' ? project.categoryEs : project.category}
+            {language === 'es' ? (project.category_es || project.categoryEs) : (project.category_en || project.category)}
           </p>
         </motion.div>
       </motion.div>

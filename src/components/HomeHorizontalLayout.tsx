@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { projects, Project } from '../data/mockData';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteData } from '../contexts/SiteContext';
 
 interface HomeHorizontalLayoutProps {
   onSelectProject: (project: Project) => void;
@@ -10,8 +11,14 @@ interface HomeHorizontalLayoutProps {
 
 export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontalLayoutProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { settings } = useSiteData();
   
+  // Get live settings or fallback
+  const title = language === 'es' ? (settings?.home_title_es || t('home.designMatters')) : (settings?.home_title_en || t('home.designMatters'));
+  const subtitle = language === 'es' ? (settings?.home_subtitle_es || 'ETC PROYECTO es un estudio de arquitectura y diseño interior.') : (settings?.home_subtitle_en || 'ETC PROYECTO is an award winning architectural and interior design studio based in Caracas.');
+  const bgImage = settings?.home_bg_image; // If empty, we use the video
+
   // Map vertical scroll (wheel) to horizontal scroll for the main page layout
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -64,15 +71,19 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
       >
         {/* SLIDE 1: HERO SECTION */}
         <div className="snap-start shrink-0 w-screen h-screen flex flex-col justify-end items-start px-6 pb-20 md:px-16 md:pb-24 lg:px-24 lg:pb-24 relative overflow-hidden">
-          {/* Video Background - YouTube */}
+          {/* Background - Video or Image */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <div className="absolute inset-0 bg-black/40 z-10" />
-            <iframe
-              src="https://www.youtube.com/embed/o0ylWuQEYPE?autoplay=1&mute=1&controls=0&loop=1&playlist=o0ylWuQEYPE&playsinline=1&rel=0&modestbranding=1"
-              className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-60"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            {bgImage ? (
+              <img src={bgImage} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Background" />
+            ) : (
+              <iframe
+                src="https://www.youtube.com/embed/o0ylWuQEYPE?autoplay=1&mute=1&controls=0&loop=1&playlist=o0ylWuQEYPE&playsinline=1&rel=0&modestbranding=1"
+                className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-60"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )}
           </div>
 
           <div className="max-w-4xl z-10 pointer-events-none select-none text-left">
@@ -91,18 +102,18 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.8 }}
-              className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase"
+              className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase whitespace-pre-line"
             >
-              {t('home.designMatters')}
+              {title}
             </motion.h1>
             
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
-              className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light"
+              className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light whitespace-pre-line"
             >
-              ETC PROYECTO is an award winning architectural and interior design studio based in Caracas.
+              {subtitle}
             </motion.p>
           </div>
         </div>
@@ -119,17 +130,23 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
 function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { language, t } = useLanguage();
+  const { projects: liveProjects } = useSiteData();
   const duration = 5000; // 5 seconds per slide
+  
+  // Use live projects if available, otherwise fallback to mock data
+  const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : projects;
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % projects.length);
+      setCurrentIndex((prev) => (prev + 1) % displayProjects.length);
     }, duration);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [displayProjects.length]);
 
-  const currentProject = projects[currentIndex];
+  const currentProject = displayProjects[currentIndex];
+
+  if (!currentProject) return null;
 
   return (
     <div className="w-full h-full relative">
@@ -145,8 +162,8 @@ function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) 
           {/* Background Image */}
           <div className="absolute inset-0">
             <motion.img 
-              src={currentProject.image} 
-              alt={language === 'es' ? currentProject.titleEs : currentProject.title} 
+              src={currentProject.image_url || currentProject.image} 
+              alt={language === 'es' ? (currentProject.title_es || currentProject.titleEs) : (currentProject.title_en || currentProject.title)} 
               className="w-full h-full object-cover"
               initial={{ scale: 1 }}
               animate={{ scale: 1.08 }}
@@ -165,7 +182,7 @@ function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) 
                 transition={{ delay: 0.3 }}
                 className="text-sm uppercase tracking-[0.3em] text-gray-400 mb-4"
               >
-                {language === 'es' ? currentProject.categoryEs : currentProject.category}
+                {language === 'es' ? (currentProject.category_es || currentProject.categoryEs) : (currentProject.category_en || currentProject.category)}
               </motion.p>
               <motion.h2 
                 initial={{ y: 30, opacity: 0 }}
@@ -173,13 +190,13 @@ function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) 
                 transition={{ delay: 0.4 }}
                 className="text-5xl md:text-7xl font-light uppercase tracking-tight mb-8"
               >
-                {language === 'es' ? currentProject.titleEs : currentProject.title}
+                {language === 'es' ? (currentProject.title_es || currentProject.titleEs) : (currentProject.title_en || currentProject.title)}
               </motion.h2>
               <motion.button 
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                onClick={() => onSelectProject(currentProject)}
+                onClick={() => onSelectProject(currentProject as any)}
                 className="group flex items-center gap-3 px-8 py-3 border border-white/30 rounded-full text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-sm"
               >
                 {t('home.viewProject')}

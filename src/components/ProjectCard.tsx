@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { useRef } from 'react';
 import { Project } from '../data/mockData';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProjectCardProps {
   project: Project;
@@ -10,6 +11,7 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project, index, onClick }: ProjectCardProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const { language } = useLanguage();
 
   // 3D Tilt Effect
   const x = useMotionValue(0);
@@ -62,8 +64,8 @@ export default function ProjectCard({ project, index, onClick }: ProjectCardProp
         <div className="absolute inset-0 bg-gray-900 overflow-hidden">
           <motion.img
             layoutId={`project-image-${project.id}`}
-            src={project.image}
-            alt={project.title}
+            src={project.image_url || project.image}
+            alt={language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             style={{ transform: "translateZ(0px)" }}
           />
@@ -74,8 +76,12 @@ export default function ProjectCard({ project, index, onClick }: ProjectCardProp
           className="absolute bottom-0 left-0 w-full p-8 text-white"
           style={{ transform: "translateZ(50px)" }}
         >
-          <p className="text-xs uppercase tracking-widest mb-2 opacity-80">{project.category}</p>
-          <h3 className="text-3xl font-light uppercase tracking-tight">{project.title}</h3>
+          <p className="text-xs uppercase tracking-widest mb-2 opacity-80">
+            {language === 'es' ? (project.category_es || project.categoryEs) : (project.category_en || project.category)}
+          </p>
+          <h3 className="text-3xl font-light uppercase tracking-tight">
+            {language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
+          </h3>
           <div className="h-[1px] w-0 bg-white mt-4 transition-all duration-500 group-hover:w-full" />
         </motion.div>
       </motion.div>
