@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import Footer from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteData } from '../contexts/SiteContext';
+import Editable from './Editable';
 
 export default function Contact() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -66,17 +67,19 @@ export default function Contact() {
               {t('contact.description')}
             </p>
             
-            <div className="space-y-2 text-sm font-mono text-gray-500">
-              {settings?.contact_email && <p>{settings.contact_email}</p>}
-              {settings?.contact_phone && <p>{settings.contact_phone}</p>}
-              {settings?.contact_address && <p>{settings.contact_address}</p>}
-              {!settings?.contact_email && !settings?.contact_phone && !settings?.contact_address && (
-                <>
-                  <p>INFO@ETCPROYECTO.COM</p>
-                  <p>+44 (0) 20 1234 5678</p>
-                </>
-              )}
-            </div>
+            <Editable section="contact" element="info">
+              <div className="space-y-2 text-sm font-mono text-gray-500">
+                {settings?.contact_email && <p>{settings.contact_email}</p>}
+                {settings?.contact_phone && <p>{settings.contact_phone}</p>}
+                {settings?.contact_address && <p>{settings.contact_address}</p>}
+                {!settings?.contact_email && !settings?.contact_phone && !settings?.contact_address && (
+                  <>
+                    <p>INFO@ETCPROYECTO.COM</p>
+                    <p>+44 (0) 20 1234 5678</p>
+                  </>
+                )}
+              </div>
+            </Editable>
           </motion.div>
 
           {/* 3D Form */}

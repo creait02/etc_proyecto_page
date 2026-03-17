@@ -5,16 +5,21 @@ interface SiteContextType {
   settings: any;
   projects: any[];
   loading: boolean;
+  isAdminPreview: boolean;
 }
 
-const SiteContext = createContext<SiteContextType>({ settings: {}, projects: [], loading: true });
+const SiteContext = createContext<SiteContextType>({ settings: {}, projects: [], loading: true, isAdminPreview: false });
 
 export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const [settings, setSettings] = useState<any>({});
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdminPreview, setIsAdminPreview] = useState(false);
 
   useEffect(() => {
+    // Check if we are inside an iframe (CMS preview)
+    setIsAdminPreview(window !== window.top);
+
     // 1. Fetch initial data from Supabase
     const fetchData = async () => {
       try {
@@ -48,7 +53,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SiteContext.Provider value={{ settings, projects, loading }}>
+    <SiteContext.Provider value={{ settings, projects, loading, isAdminPreview }}>
       {children}
     </SiteContext.Provider>
   );

@@ -17,10 +17,37 @@ export default function Dashboard() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Elementor-like Editor State
+  const [activeEditor, setActiveEditor] = useState<{ section: string, element: string, projectId?: string } | null>(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    // Listen for messages from the iframe
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'ELEMENT_CLICKED') {
+        const { section, element, projectId } = event.data.payload;
+        setActiveEditor({ section, element, projectId });
+        
+        // Switch to the appropriate tab based on the section
+        if (section === 'home' || section === 'header') {
+          setActiveTab('home');
+        } else if (section === 'projects') {
+          setActiveTab('projects');
+          if (projectId) {
+            const proj = projects.find(p => p.id === projectId);
+            if (proj) setEditingProject(proj);
+          }
+        } else if (section === 'contact') {
+          setActiveTab('contact');
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [projects]);
 
   const fetchData = async () => {
     const [setRes, projRes] = await Promise.all([
@@ -196,7 +223,110 @@ export default function Dashboard() {
         {/* Form Area */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           
-          {activeTab === 'home' && (
+          {activeEditor && (
+            <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg animate-in fade-in slide-in-from-top-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400">Editando: {activeEditor.element}</h3>
+                <button onClick={() => setActiveEditor(null)} className="text-gray-500 hover:text-white"><X size={14} /></button>
+              </div>
+              
+              {activeEditor.element === 'logo' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Logo (Imagen)</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={e => handleFileUpload(e, url => updateSetting('logo_url', url))}
+                      disabled={isUploading}
+                      className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
+                    />
+                    {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest mt-2">Subiendo archivo...</p>}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Texto Alt del Logo</label>
+                    <input value={draftSettings.logo_alt || ''} onChange={e => updateSetting('logo_alt', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="ETC PROYECTO" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'title' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (EN)</label>
+                    <input value={draftSettings.home_title_en || ''} onChange={e => updateSetting('home_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (ES)</label>
+                    <input value={draftSettings.home_title_es || ''} onChange={e => updateSetting('home_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'subtitle' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (EN)</label>
+                    <textarea value={draftSettings.home_subtitle_en || ''} onChange={e => updateSetting('home_subtitle_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-20 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (ES)</label>
+                    <textarea value={draftSettings.home_subtitle_es || ''} onChange={e => updateSetting('home_subtitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-20 resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'background' && (
+                <div className="space-y-4">
+                  <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media de Fondo (Imagen o Vídeo)</label>
+                  <div className="space-y-3">
+                    {draftSettings.home_bg_image && (
+                      <div className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group">
+                        {draftSettings.home_bg_image.match(/\.(mp4|webm|ogg)$/i) ? (
+                          <video src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
+                        ) : (
+                          <img src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" alt="Preview" />
+                        )}
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*,video/*"
+                      onChange={e => handleFileUpload(e, url => updateSetting('home_bg_image', url))}
+                      disabled={isUploading}
+                      className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
+                    />
+                    {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'info' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Email</label>
+                    <input value={draftSettings.contact_email || ''} onChange={e => updateSetting('contact_email', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Teléfono</label>
+                    <input value={draftSettings.contact_phone || ''} onChange={e => updateSetting('contact_phone', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Dirección</label>
+                    <textarea value={draftSettings.contact_address || ''} onChange={e => updateSetting('contact_address', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
+              )}
+              
+              {/* If it's a project, the main projects tab handles it via editingProject state */}
+              {activeEditor.element === 'project' && (
+                <p className="text-xs text-gray-400">Editando el proyecto seleccionado en la pestaña inferior.</p>
+              )}
+            </div>
+          )}
+
+          {/* Hide the general tabs content if we are focusing on a specific editor (except for projects which uses the main form) */}
+          {!activeEditor && activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (EN)</label>
@@ -242,7 +372,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {activeTab === 'contact' && (
+          {!activeEditor && activeTab === 'contact' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Email</label>

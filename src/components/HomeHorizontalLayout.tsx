@@ -4,6 +4,7 @@ import { projects, Project } from '../data/mockData';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteData } from '../contexts/SiteContext';
+import Editable from './Editable';
 
 interface HomeHorizontalLayoutProps {
   onSelectProject: (project: Project) => void;
@@ -72,19 +73,19 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
         {/* SLIDE 1: HERO SECTION */}
         <div className="snap-start shrink-0 w-screen h-screen flex flex-col justify-end items-start px-6 pb-20 md:px-16 md:pb-24 lg:px-24 lg:pb-24 relative overflow-hidden">
           {/* Background - Video or Image */}
-          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 bg-black/40 z-10" />
+          <Editable section="home" element="background" className="absolute inset-0 z-0 overflow-hidden pointer-events-auto">
+            <div className="absolute inset-0 bg-black/40 z-10 pointer-events-none" />
             {bgImage ? (
-              <img src={bgImage} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Background" />
+              <img src={bgImage} className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" alt="Background" />
             ) : (
               <iframe
                 src="https://www.youtube.com/embed/o0ylWuQEYPE?autoplay=1&mute=1&controls=0&loop=1&playlist=o0ylWuQEYPE&playsinline=1&rel=0&modestbranding=1"
-                className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-60"
+                className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-60 pointer-events-none"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             )}
-          </div>
+          </Editable>
 
           <div className="max-w-4xl z-10 pointer-events-none select-none text-left">
             <motion.div 
@@ -98,23 +99,27 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
               <span className="text-gray-400">{t('project.studio')}</span>
             </motion.div>
             
-            <motion.h1 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase whitespace-pre-line"
-            >
-              {title}
-            </motion.h1>
+            <Editable section="home" element="title" className="pointer-events-auto">
+              <motion.h1 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.8 }}
+                className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase whitespace-pre-line"
+              >
+                {title}
+              </motion.h1>
+            </Editable>
             
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light whitespace-pre-line"
-            >
-              {subtitle}
-            </motion.p>
+            <Editable section="home" element="subtitle" className="pointer-events-auto">
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light whitespace-pre-line"
+              >
+                {subtitle}
+              </motion.p>
+            </Editable>
           </div>
         </div>
 
@@ -175,7 +180,7 @@ function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) 
 
           {/* Content */}
           <div className="absolute bottom-0 left-0 w-full p-12 md:p-24 flex flex-col md:flex-row justify-between items-end z-20">
-            <div className="max-w-2xl">
+            <Editable section="projects" element="project" projectId={currentProject.id} className="max-w-2xl">
               <motion.p 
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -202,7 +207,7 @@ function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) 
                 {t('home.viewProject')}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </motion.button>
-            </div>
+            </Editable>
           </div>
         </motion.div>
       </AnimatePresence>
