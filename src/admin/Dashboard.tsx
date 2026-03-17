@@ -16,6 +16,7 @@ export default function Dashboard() {
 
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -33,6 +34,58 @@ export default function Dashboard() {
     }
     if (projRes.data) {
       setProjects(projRes.data);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    
+    if (!isVideo && !isImage) {
+      alert('Por favor, sube solo imágenes o vídeos.');
+      e.target.value = '';
+      return;
+    }
+
+    // Límite de peso: 5MB para imágenes, 30MB para vídeos
+    const maxSizeMB = isVideo ? 30 : 5;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+    if (file.size > maxSizeBytes) {
+      alert(`El archivo es demasiado grande. El límite es de ${maxSizeMB}MB para ${isVideo ? 'vídeos' : 'imágenes'}.`);
+      e.target.value = '';
+      return;
+    }
+
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'ml_default');
+    formData.append('cloud_name', 'debywjrlg');
+
+    try {
+      const res = await fetch('https://api.cloudinary.com/v1_1/debywjrlg/auto/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await res.json();
+      
+      if (data.secure_url) {
+        callback(data.secure_url);
+      } else {
+        throw new Error(data.error?.message || 'Error al subir el archivo');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Hubo un error al subir el archivo. Verifica que tu Upload Preset "ml_default" esté configurado como "Unsigned".');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -118,29 +171,7 @@ export default function Dashboard() {
     }
   };
 
-  const openCloudinaryWidget = (callback: (url: string) => void) => {
-    // @ts-ignore
-    if (window.cloudinary) {
-      // @ts-ignore
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName: 'dhn1b931q', // User's Cloudinary cloud name
-          uploadPreset: 'ml_default', // User's Cloudinary upload preset
-          sources: ['local', 'url', 'camera'],
-          multiple: false,
-          maxFiles: 1,
-        },
-        (error: any, result: any) => {
-          if (!error && result && result.event === 'success') {
-            callback(result.info.secure_url);
-          }
-        }
-      );
-      widget.open();
-    } else {
-      alert('Cloudinary widget not loaded yet. Please try again in a moment.');
-    }
-  };
+
 
   return (
     <div className="flex h-screen bg-zinc-950 text-white overflow-hidden font-sans">
@@ -184,12 +215,28 @@ export default function Dashboard() {
                 <textarea value={draftSettings.home_subtitle_es || ''} onChange={e => updateSetting('home_subtitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-20 resize-none" />
               </div>
               <div className="pt-4 border-t border-white/10">
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Imagen de Fondo (URL)</label>
-                <div className="flex gap-2">
-                  <input value={draftSettings.home_bg_image || ''} onChange={e => updateSetting('home_bg_image', e.target.value)} className="flex-1 bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
-                  <button type="button" onClick={() => openCloudinaryWidget((url) => updateSetting('home_bg_image', url))} className="px-4 bg-white/10 hover:bg-white/20 rounded text-xs transition-colors">
-                    Subir
-                  </button>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media de Fondo (Imagen o Vídeo)</label>
+                <div className="space-y-3">
+                  {draftSettings.home_bg_image && (
+                    <div className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group">
+                      {draftSettings.home_bg_image.match(/\.(mp4|webm|ogg)$/i) ? (
+                        <video src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
+                      ) : (
+                        <img src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" alt="Preview" />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded">Media Actual</span>
+                      </div>
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*,video/*"
+                    onChange={e => handleFileUpload(e, url => updateSetting('home_bg_image', url))}
+                    disabled={isUploading}
+                    className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
+                  />
+                  {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
                 </div>
               </div>
             </div>
@@ -255,12 +302,28 @@ export default function Dashboard() {
                     <input value={editingProject.location || ''} onChange={e=>setEditingProject({...editingProject, location: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Imagen URL</label>
-                    <div className="flex gap-2">
-                      <input required value={editingProject.image_url || ''} onChange={e=>setEditingProject({...editingProject, image_url: e.target.value})} className="flex-1 bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" placeholder="https://..." />
-                      <button type="button" onClick={() => openCloudinaryWidget((url) => setEditingProject({...editingProject, image_url: url}))} className="px-3 bg-white/10 hover:bg-white/20 rounded text-xs transition-colors">
-                        Subir
-                      </button>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media del Proyecto (Imagen o Vídeo)</label>
+                    <div className="space-y-3">
+                      {editingProject.image_url && (
+                        <div className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group">
+                          {editingProject.image_url.match(/\.(mp4|webm|ogg)$/i) ? (
+                            <video src={editingProject.image_url} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
+                          ) : (
+                            <img src={editingProject.image_url} className="w-full h-full object-cover opacity-50" alt="Preview" />
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded">Media Actual</span>
+                          </div>
+                        </div>
+                      )}
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*"
+                        onChange={e => handleFileUpload(e, url => setEditingProject({...editingProject, image_url: url}))}
+                        disabled={isUploading}
+                        className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
+                      />
+                      {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
                     </div>
                   </div>
                   
