@@ -38,17 +38,28 @@ export default function Dashboard() {
 
   // Update Live Preview when draft changes
   useEffect(() => {
+    // Combine saved projects with the currently editing project for live preview
+    let previewProjects = [...projects];
+    if (editingProject) {
+      if (editingProject.id) {
+        previewProjects = previewProjects.map(p => p.id === editingProject.id ? editingProject : p);
+      } else {
+        previewProjects = [editingProject, ...previewProjects];
+      }
+    }
+
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({
         type: 'PREVIEW_UPDATE',
-        payload: { settings: draftSettings, projects: projects }
+        payload: { settings: draftSettings, projects: previewProjects }
       }, '*');
     }
     
     // Check if changed
-    const isChanged = JSON.stringify(originalSettings) !== JSON.stringify(draftSettings);
-    setHasChanges(isChanged);
-  }, [draftSettings, projects, originalSettings]);
+    const isSettingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(draftSettings);
+    const isProjectEditing = editingProject !== null;
+    setHasChanges(isSettingsChanged || isProjectEditing);
+  }, [draftSettings, projects, originalSettings, editingProject]);
 
   const updateSetting = (key: string, value: string) => {
     setDraftSettings((prev: any) => ({ ...prev, [key]: value }));
@@ -56,31 +67,48 @@ export default function Dashboard() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    if (originalSettings.id) {
-      await supabase.from('site_settings').update(draftSettings).eq('id', originalSettings.id);
-    } else {
-      await supabase.from('site_settings').insert([draftSettings]);
+    
+    // Save settings if changed
+    const isSettingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(draftSettings);
+    if (isSettingsChanged) {
+      if (originalSettings.id) {
+        await supabase.from('site_settings').update(draftSettings).eq('id', originalSettings.id);
+      } else {
+        await supabase.from('site_settings').insert([draftSettings]);
+      }
+      setOriginalSettings(draftSettings);
     }
-    setOriginalSettings(draftSettings);
+
+    // Save project if editing
+    if (editingProject) {
+      if (!editingProject.title_en || !editingProject.title_es || !editingProject.category_en || !editingProject.category_es || !editingProject.image_url) {
+        alert('Por favor completa los campos requeridos del proyecto (Títulos, Categorías, Imagen URL).');
+        setIsSaving(false);
+        return;
+      }
+      if (editingProject.id) {
+        await supabase.from('projects').update(editingProject).eq('id', editingProject.id);
+      } else {
+        await supabase.from('projects').insert([editingProject]);
+      }
+      setEditingProject(null);
+      await fetchData(); // Refresh projects
+    }
+
     setHasChanges(false);
     setIsSaving(false);
   };
 
   const handleDiscard = () => {
     setDraftSettings(originalSettings);
+    setEditingProject(null);
     setHasChanges(false);
   };
 
   // Project Handlers (Direct save for simplicity in this view)
   const saveProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingProject.id) {
-      await supabase.from('projects').update(editingProject).eq('id', editingProject.id);
-    } else {
-      await supabase.from('projects').insert([editingProject]);
-    }
-    setEditingProject(null);
-    fetchData(); // Refresh projects
+    await handleSave();
   };
 
   const deleteProject = async (id: string) => {
@@ -192,7 +220,7 @@ export default function Dashboard() {
             <div className="animate-in fade-in slide-in-from-left-4 duration-300">
               {editingProject ? (
                 <form onSubmit={saveProject} className="space-y-4">
-                  <button type="button" onClick={() => setEditingProject(null)} className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-white mb-4 flex items-center gap-1"><X size={12}/> Volver</button>
+                  <button type="button" onClick={() => setEditingProject(null)} className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-white mb-4 flex items-center gap-1"><X size={12}/> Descartar / Volver</button>
                   
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Título (EN)</label>
