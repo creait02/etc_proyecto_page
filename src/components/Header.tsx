@@ -22,12 +22,25 @@ export default function Header({ onMenuClick, onHomeClick }: HeaderProps) {
     >
       <div className="flex items-center gap-4">
         <Editable section="header" element="logo">
-          <button onClick={onHomeClick} className="text-2xl font-bold tracking-tighter uppercase font-sans flex items-center gap-2">
-            {settings?.logo_url ? (
-              <img src={settings.logo_url} alt={settings.logo_alt || "ETC PROYECTO"} className="h-8 object-contain" />
-            ) : (
-              "ETC PROYECTO"
-            )}
+          <button onClick={onHomeClick} className="flex items-center group cursor-shrink">
+            <img 
+              src="https://res.cloudinary.com/debywjrlg/image/upload/v1773851845/logo_ETC_white_zlrhe4.png" 
+              alt="ETC" 
+              className="h-6 md:h-8 w-auto object-contain relative z-10" 
+              referrerPolicy="no-referrer"
+            />
+            <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-700 ease-[0.16,1,0.3,1]">
+              <div className="overflow-hidden flex items-center">
+                <div className="pl-3 flex items-center">
+                  <img 
+                    src="https://res.cloudinary.com/debywjrlg/image/upload/v1773851845/ETC_large_white_o9sqhc.png" 
+                    alt="Estudio Transformación Construcción" 
+                    className="h-6 md:h-8 w-auto max-w-none -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-[0.16,1,0.3,1]" 
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </div>
+            </div>
           </button>
         </Editable>
       </div>
@@ -35,12 +48,12 @@ export default function Header({ onMenuClick, onHomeClick }: HeaderProps) {
       <div className="flex items-center gap-6">
         <button 
           onClick={toggleLanguage} 
-          className="text-sm font-medium tracking-widest hover:text-gray-400 transition-colors"
+          className="text-sm font-medium tracking-widest hover:text-gray-400 transition-all duration-300 cursor-shrink hover:scale-125"
         >
           {language === 'en' ? 'ES' : 'EN'}
         </button>
-        <button onClick={onMenuClick} className="p-2 -mr-2">
-          <Menu className="w-6 h-6 cursor-pointer hover:opacity-70 transition-opacity" />
+        <button onClick={onMenuClick} className="p-2 -mr-2 cursor-shrink hover:scale-125 hover:text-gray-400 transition-all duration-300">
+          <Menu className="w-6 h-6 cursor-pointer" />
         </button>
       </div>
     </motion.header>

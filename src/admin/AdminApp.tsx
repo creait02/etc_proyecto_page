@@ -12,16 +12,33 @@ export default function AdminApp() {
     document.body.style.cursor = 'auto';
 
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Session error:", error.message);
+        if (error.message.includes('Refresh Token')) {
+          supabase.auth.signOut(); // Clear invalid tokens
+        }
+        setSession(null);
+      } else {
+        setSession(session);
+      }
+      setLoading(false);
+    }).catch((err) => {
+      console.error("Failed to get session:", err);
+      setSession(null);
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'TOKEN_REFRESH_FAILED') {
+        await supabase.auth.signOut();
+        setSession(null);
+      } else {
+        setSession(session);
+      }
     });
 
     return () => subscription.unsubscribe();

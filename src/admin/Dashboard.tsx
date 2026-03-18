@@ -523,7 +523,7 @@ export default function Dashboard() {
             {/* Overlay to prevent iframe capturing pointer events while dragging/resizing (if we add that later) */}
             <iframe 
               ref={iframeRef} 
-              src="/" 
+              src="/?admin_preview=true" 
               className="w-full h-full border-0"
               title="Live Preview"
             />

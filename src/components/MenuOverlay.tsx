@@ -72,13 +72,13 @@ export default function MenuOverlay({ isOpen, onClose, onContactClick, onProject
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleLanguage} 
-                className="text-xs font-medium tracking-widest hover:text-gray-400 transition-colors border border-white px-2 py-1"
+                className="text-xs font-medium tracking-widest hover:text-gray-400 transition-all duration-300 border border-white px-2 py-1 cursor-shrink hover:scale-110"
               >
                 {language === 'en' ? 'ES' : 'EN'}
               </button>
               <button 
                 onClick={onClose}
-                className="p-2 -mr-2 hover:opacity-70 transition-opacity"
+                className="p-2 -mr-2 transition-all duration-300 cursor-shrink hover:scale-125 hover:text-gray-500"
               >
                 <X className="w-8 h-8 stroke-[1]" />
               </button>

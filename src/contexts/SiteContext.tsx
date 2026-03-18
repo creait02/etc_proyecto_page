@@ -17,8 +17,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdminPreview, setIsAdminPreview] = useState(false);
 
   useEffect(() => {
-    // Check if we are inside an iframe (CMS preview)
-    setIsAdminPreview(window !== window.top);
+    // Check if we are inside the CMS preview iframe
+    const urlParams = new URLSearchParams(window.location.search);
+    setIsAdminPreview(urlParams.get('admin_preview') === 'true');
 
     // 1. Fetch initial data from Supabase
     const fetchData = async () => {
