@@ -7,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Global listener to handle invalid refresh tokens and clear them automatically
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'TOKEN_REFRESH_FAILED') {
+  if ((event as any) === 'TOKEN_REFRESH_FAILED') {
     console.warn('Refresh token invalid or expired. Clearing session.');
     supabase.auth.signOut().catch(console.error);
     

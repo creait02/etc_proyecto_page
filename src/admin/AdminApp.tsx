@@ -33,7 +33,7 @@ export default function AdminApp() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'TOKEN_REFRESH_FAILED') {
+      if ((event as any) === 'TOKEN_REFRESH_FAILED') {
         await supabase.auth.signOut();
         setSession(null);
       } else {

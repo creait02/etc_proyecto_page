@@ -9,6 +9,7 @@ interface MenuOverlayProps {
   onContactClick: () => void;
   onProjectsClick: () => void;
   onHomeClick: () => void;
+  onHighlightsClick: () => void;
 }
 
 const menuItems = [
@@ -27,7 +28,7 @@ const servicesList = [
   "services.create"
 ];
 
-export default function MenuOverlay({ isOpen, onClose, onContactClick, onProjectsClick, onHomeClick }: MenuOverlayProps) {
+export default function MenuOverlay({ isOpen, onClose, onContactClick, onProjectsClick, onHomeClick, onHighlightsClick }: MenuOverlayProps) {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const { language, toggleLanguage, t } = useLanguage();
 
@@ -44,10 +45,21 @@ export default function MenuOverlay({ isOpen, onClose, onContactClick, onProject
       return;
     }
     onClose();
-    if (action === 'contact') {
-      onContactClick();
-    } else if (action === 'projects') {
-      onProjectsClick();
+    switch (action) {
+      case 'contact':
+        onContactClick();
+        break;
+      case 'projects':
+        onProjectsClick();
+        break;
+      case 'highlights':
+        onHighlightsClick();
+        break;
+      case 'home':
+        onHomeClick();
+        break;
+      default:
+        break;
     }
   };
 
