@@ -19,13 +19,35 @@ export default function Highlights() {
   const { language } = useLanguage();
   const [step, setStep] = useState(1);
   const [hoveredId, setHoveredId] = useState<number | null>(1);
+  const [activeFilter, setActiveFilter] = useState<string>('All');
   const isScrollingRef = useRef(false);
+
+  const categories = [
+    { id: 'All', en: 'All', es: 'Todos' },
+    { id: 'Eventos', en: 'Events', es: 'Eventos' },
+    { id: 'eco', en: 'Eco', es: 'eco' },
+    { id: 'Habitado', en: 'Inhabited', es: 'Habitado' }
+  ];
+
+  // Map real categories to the filter categories
+  const getMappedCategory = (role: string) => {
+    if (role === 'Industrial' || role === 'Architecture') return 'Eventos';
+    if (role === 'Commercial') return 'eco';
+    if (role === 'Residential') return 'Habitado';
+    return 'Habitado';
+  };
+
+  const filteredHighlights = highlightsData.filter(item => {
+    if (activeFilter === 'All') return true;
+    return getMappedCategory(item.role) === activeFilter;
+  });
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (isScrollingRef.current) return;
 
-      if (Math.abs(e.deltaY) > 20) {
+      // Increased threshold to avoid accidental transitions
+      if (Math.abs(e.deltaY) > 50) {
         if (e.deltaY > 0 && step === 1) {
           isScrollingRef.current = true;
           setStep(2);
@@ -52,52 +74,91 @@ export default function Highlights() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full h-full flex flex-col items-center justify-center px-6 md:px-24 py-20 overflow-y-auto scrollbar-hide"
+            className="w-full h-full flex flex-col items-center px-6 md:px-24 py-20 overflow-y-auto scrollbar-hide"
           >
             {/* Header */}
-            <div className="text-center mb-16">
+            <div className="text-center mb-16 pt-10">
               <h1 className="text-4xl md:text-7xl font-bold tracking-[0.1em] uppercase mb-12">
                 {language === 'en' ? 'STORIES WE BUILD' : 'HISTORIAS QUE CONSTRUIMOS'}
               </h1>
               
-              {/* Categories */}
-              <div className="flex justify-center gap-12 md:gap-24">
-                {['Eventos', 'eco', 'Habitado'].map((cat) => (
-                  <div key={cat} className="group cursor-pointer">
-                    <div className="w-8 h-[2px] bg-cyan-400 mb-2 mx-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="text-lg md:text-2xl font-light tracking-widest text-gray-400 group-hover:text-white transition-colors">
-                      {cat}
+              {/* Categories / Filters */}
+              <div className="flex justify-center gap-4 md:gap-12 flex-wrap">
+                {categories.map((cat) => (
+                  <button 
+                    key={cat.id} 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveFilter(cat.id);
+                    }}
+                    className="group relative px-6 py-3 cursor-pointer z-20 transition-all duration-300"
+                  >
+                    {/* Top Line Indicator */}
+                    <motion.div 
+                      initial={false}
+                      animate={{ 
+                        opacity: activeFilter === cat.id ? 1 : 0,
+                        width: activeFilter === cat.id ? '2rem' : '0rem'
+                      }}
+                      className="absolute -top-2 left-1/2 -translate-x-1/2 h-[2px] bg-cyan-400" 
+                    />
+                    
+                    {/* Background Pill (Active State) */}
+                    {activeFilter === cat.id && (
+                      <motion.div 
+                        layoutId="activeFilterBg"
+                        className="absolute inset-0 bg-gray-800/80 rounded-xl -z-10"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+
+                    <span className={`text-sm md:text-xl font-light tracking-widest transition-colors duration-300 ${activeFilter === cat.id ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>
+                      {language === 'en' ? cat.en : cat.es}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl w-full">
-              {highlightsData.slice(0, 3).map((item) => (
-                <div key={item.id} className="bg-[#151515] rounded-3xl overflow-hidden group hover:bg-[#1a1a1a] transition-colors duration-500">
-                  <div className="aspect-[16/10] overflow-hidden">
-                    <img 
-                      src={item.image} 
-                      alt={language === 'en' ? item.name : item.nameEs}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="p-8">
-                    <h3 className="text-2xl font-medium mb-4">
-                      {language === 'en' ? item.name : item.nameEs}
-                    </h3>
-                    <p className="text-gray-400 font-light text-sm leading-relaxed mb-8 line-clamp-4">
-                      {language === 'en' ? item.description : item.descriptionEs}
-                    </p>
-                    <button className="px-6 py-2 bg-gray-700/50 rounded-full text-xs uppercase tracking-widest text-gray-300 group-hover:bg-cyan-900/30 group-hover:text-cyan-400 transition-all">
-                      {item.roleEs}
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl w-full pb-20">
+              <AnimatePresence mode="popLayout">
+                {filteredHighlights.map((item) => (
+                  <motion.div 
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="bg-[#151515] rounded-3xl overflow-hidden group hover:bg-[#1a1a1a] transition-colors duration-500 border border-white/5"
+                  >
+                    <div className="aspect-[16/10] overflow-hidden">
+                      <img 
+                        src={item.image} 
+                        alt={language === 'en' ? item.name : item.nameEs}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="p-8">
+                      <h3 className="text-2xl font-medium mb-4">
+                        {language === 'en' ? item.name : item.nameEs}
+                      </h3>
+                      <p className="text-gray-400 font-light text-sm leading-relaxed mb-8 line-clamp-3">
+                        {language === 'en' ? item.description : item.descriptionEs}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="px-4 py-1.5 bg-gray-800/50 rounded-full text-[10px] uppercase tracking-widest text-gray-400">
+                          {getMappedCategory(item.role)}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
 
             {/* Scroll Hint */}
