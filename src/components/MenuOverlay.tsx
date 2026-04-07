@@ -10,12 +10,13 @@ interface MenuOverlayProps {
   onProjectsClick: () => void;
   onHomeClick: () => void;
   onHighlightsClick: () => void;
+  onTeamClick: () => void;
 }
 
 const menuItems = [
   { key: "menu.projects", action: "projects" },
   { key: "menu.services", action: "services", hasSubMenu: true },
-  { key: "menu.studio", action: "studio" },
+  { key: "menu.team", action: "team" },
   { key: "menu.highlights", action: "highlights" },
   { key: "menu.contact", action: "contact" }
 ];
@@ -28,7 +29,7 @@ const servicesList = [
   "services.create"
 ];
 
-export default function MenuOverlay({ isOpen, onClose, onContactClick, onProjectsClick, onHomeClick, onHighlightsClick }: MenuOverlayProps) {
+export default function MenuOverlay({ isOpen, onClose, onContactClick, onProjectsClick, onHomeClick, onHighlightsClick, onTeamClick }: MenuOverlayProps) {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const { language, toggleLanguage, t } = useLanguage();
 
@@ -54,6 +55,9 @@ export default function MenuOverlay({ isOpen, onClose, onContactClick, onProject
         break;
       case 'highlights':
         onHighlightsClick();
+        break;
+      case 'team':
+        onTeamClick();
         break;
       case 'home':
         onHomeClick();

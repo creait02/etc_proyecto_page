@@ -12,7 +12,7 @@ const translations = {
   en: {
     'menu.projects': 'Projects',
     'menu.services': 'Services',
-    'menu.studio': 'Studio',
+    'menu.team': 'Team',
     'menu.highlights': 'Highlights',
     'menu.contact': 'Contact',
     'menu.back': 'Back',
@@ -57,7 +57,7 @@ const translations = {
   es: {
     'menu.projects': 'Proyectos',
     'menu.services': 'Servicios',
-    'menu.studio': 'Estudio',
+    'menu.team': 'Equipo',
     'menu.highlights': 'Destacados',
     'menu.contact': 'Contacto',
     'menu.back': 'Atrás',

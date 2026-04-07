@@ -14,6 +14,7 @@ import CustomCursor from './components/CustomCursor';
 import Preloader from './components/Preloader';
 import Contact from './components/Contact';
 import Highlights from './components/Highlights';
+import Team from './components/Team';
 import ProjectView from './components/ProjectView';
 import HorizontalProjectsGallery from './components/HorizontalProjectsGallery';
 import { AnimatePresence, motion } from 'motion/react';
@@ -30,7 +31,7 @@ function MainSite() {
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
   const [isContactTransition, setIsContactTransition] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [view, setView] = useState<'home' | 'projects' | 'contact' | 'highlights'>('home');
+  const [view, setView] = useState<'home' | 'projects' | 'contact' | 'highlights' | 'team'>('home');
 
   // Lock body scroll when menu is open or loading
   useEffect(() => {
@@ -66,6 +67,7 @@ function MainSite() {
               onProjectsClick={() => setView('projects')}
               onHomeClick={() => setView('home')}
               onHighlightsClick={() => setView('highlights')}
+              onTeamClick={() => setView('team')}
             />
             <ProjectView project={selectedProject} onClose={() => setSelectedProject(null)} />
             
@@ -122,6 +124,19 @@ function MainSite() {
                     className="fixed inset-0 z-40 bg-[#0a0a0a]"
                   >
                     <Highlights />
+                  </motion.div>
+                )}
+
+                {view === 'team' && (
+                  <motion.div
+                    key="team"
+                    initial={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
+                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="fixed inset-0 z-40 bg-black"
+                  >
+                    <Team />
                   </motion.div>
                 )}
               </AnimatePresence>
