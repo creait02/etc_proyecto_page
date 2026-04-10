@@ -16,11 +16,12 @@ const teamMembers = [
 export default function Team() {
   const { language } = useLanguage();
   const [step, setStep] = useState(1);
+  const [expandedMemberId, setExpandedMemberId] = useState<number | null>(null);
   const isScrollingRef = useRef(false);
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (isScrollingRef.current) return;
+      if (isScrollingRef.current || expandedMemberId !== null) return;
 
       // Detect vertical scroll and map to horizontal transition
       if (Math.abs(e.deltaY) > 20) {
@@ -40,7 +41,7 @@ export default function Team() {
 
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
-  }, [step]);
+  }, [step, expandedMemberId]);
 
   return (
     <div className="w-full h-full bg-black text-white overflow-hidden relative">
@@ -103,20 +104,29 @@ export default function Team() {
             {teamMembers.map((member, index) => (
               <motion.div
                 key={member.id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 h-full relative group overflow-hidden border-r border-white/10 last:border-r-0"
+                initial={{ opacity: 0, y: 200 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  flex: expandedMemberId === null ? 1 : (expandedMemberId === member.id ? 2.2 : 0.8)
+                }}
+                transition={{ 
+                  y: { duration: 1, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] },
+                  opacity: { duration: 1, delay: index * 0.1 },
+                  flex: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+                }}
+                onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
+                className="h-full relative group overflow-hidden border-r border-white/10 last:border-r-0 cursor-pointer transition-[flex] duration-700 ease-[0.16,1,0.3,1]"
               >
                 <img 
                   src={member.image} 
                   alt={member.name}
-                  className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100"
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 scale-110 group-hover:scale-100 ${expandedMemberId === member.id ? 'grayscale-0' : 'grayscale group-hover:grayscale-0'}`}
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                <div className={`absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent transition-opacity ${expandedMemberId === member.id ? 'opacity-40' : 'opacity-60 group-hover:opacity-40'}`} />
                 
-                <div className="absolute bottom-12 left-0 right-0 px-4 text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                <div className={`absolute bottom-12 left-0 right-0 px-4 text-center transition-all duration-500 ${expandedMemberId === member.id ? 'translate-y-0 opacity-100' : 'transform translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100'}`}>
                   <h3 className="text-lg font-bold uppercase tracking-tighter mb-1">{member.name}</h3>
                   <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400">{member.role}</p>
                 </div>
@@ -124,10 +134,20 @@ export default function Team() {
             ))}
 
             {/* Hint to scroll back */}
-            <div className="absolute top-24 left-12 z-[60] flex items-center gap-4 text-[9px] uppercase tracking-[0.3em] text-white/50 pointer-events-none">
+            <div className={`absolute top-24 left-12 z-[60] flex items-center gap-4 text-[9px] uppercase tracking-[0.3em] text-white/50 pointer-events-none transition-opacity duration-500 ${expandedMemberId !== null ? 'opacity-0' : 'opacity-100'}`}>
               <div className="w-8 h-[1px] bg-white/50" />
               <span>{language === 'en' ? 'Scroll up to go back' : 'Sube con el scroll para volver'}</span>
             </div>
+
+            {/* Close Expanded View Button */}
+            {expandedMemberId !== null && (
+              <button 
+                onClick={() => setExpandedMemberId(null)}
+                className="absolute top-24 left-12 z-[70] px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[9px] uppercase tracking-widest hover:bg-white/20 transition-all"
+              >
+                {language === 'en' ? 'Close' : 'Cerrar'}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
