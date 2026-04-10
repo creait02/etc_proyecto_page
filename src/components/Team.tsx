@@ -1,7 +1,17 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import Highlights from './Highlights';
+
+const teamMembers = [
+  { id: 1, name: 'John Doe', role: 'Lead Architect', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop' },
+  { id: 2, name: 'Jane Smith', role: 'Structural Engineer', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop' },
+  { id: 3, name: 'Mike Ross', role: 'Project Manager', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop' },
+  { id: 4, name: 'Sarah Chen', role: 'Interior Designer', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1000&auto=format&fit=crop' },
+  { id: 5, name: 'David Wilson', role: 'Site Supervisor', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1000&auto=format&fit=crop' },
+  { id: 6, name: 'Elena Rodriguez', role: 'BIM Coordinator', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1000&auto=format&fit=crop' },
+  { id: 7, name: 'Alex Thompson', role: 'Sustainability Expert', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop' },
+  { id: 8, name: 'Lisa Wang', role: 'Urban Planner', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop' },
+];
 
 export default function Team() {
   const { language } = useLanguage();
@@ -88,14 +98,36 @@ export default function Team() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 100 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full h-full"
+            className="w-full h-full flex"
           >
-             <Highlights />
-             {/* Hint to scroll back */}
-             <div className="absolute top-24 left-12 z-[60] flex items-center gap-4 text-[9px] uppercase tracking-[0.3em] text-white/30 pointer-events-none">
-                <div className="w-8 h-[1px] bg-white/30" />
-                <span>{language === 'en' ? 'Scroll up to go back' : 'Sube con el scroll para volver'}</span>
-              </div>
+            {teamMembers.map((member, index) => (
+              <motion.div
+                key={member.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="flex-1 h-full relative group overflow-hidden border-r border-white/10 last:border-r-0"
+              >
+                <img 
+                  src={member.image} 
+                  alt={member.name}
+                  className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                
+                <div className="absolute bottom-12 left-0 right-0 px-4 text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                  <h3 className="text-lg font-bold uppercase tracking-tighter mb-1">{member.name}</h3>
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400">{member.role}</p>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Hint to scroll back */}
+            <div className="absolute top-24 left-12 z-[60] flex items-center gap-4 text-[9px] uppercase tracking-[0.3em] text-white/50 pointer-events-none">
+              <div className="w-8 h-[1px] bg-white/50" />
+              <span>{language === 'en' ? 'Scroll up to go back' : 'Sube con el scroll para volver'}</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -30,6 +30,13 @@ export default function Highlights() {
     setScrollTop(scrollRef.current.scrollTop);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartY(e.touches[0].pageY - scrollRef.current.offsetTop);
+    setScrollTop(scrollRef.current.scrollTop);
+  };
+
   const handleMouseLeave = () => {
     setIsDragging(false);
   };
@@ -43,6 +50,13 @@ export default function Highlights() {
     e.preventDefault();
     const y = e.pageY - scrollRef.current.offsetTop;
     const walk = (y - startY) * 2; // Scroll speed
+    scrollRef.current.scrollTop = scrollTop - walk;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    const y = e.touches[0].pageY - scrollRef.current.offsetTop;
+    const walk = (y - startY) * 2;
     scrollRef.current.scrollTop = scrollTop - walk;
   };
 
@@ -107,16 +121,23 @@ export default function Highlights() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="w-full h-full flex flex-col md:flex-row bg-[#0a0a0a] relative overflow-hidden"
           >
-            {/* Close Button */}
+            {/* Back Button - Relocated to Top Left but below the header logo for better UX */}
             <button 
-              onClick={() => setSelectedItem(null)}
-              className="absolute top-8 right-8 z-50 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-all border border-white/10"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedItem(null);
+              }}
+              className="absolute top-24 left-6 md:top-32 md:left-12 z-[100] px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-xl flex items-center gap-3 hover:bg-white/20 transition-all border border-white/20 group cursor-pointer shadow-2xl"
             >
-              <ArrowRight className="w-5 h-5 rotate-180" />
+              <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform text-white" />
+              <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white">
+                {language === 'en' ? 'Back' : 'Volver'}
+              </span>
             </button>
 
             {/* Left Side: Main Visual */}
-            <div className="w-full md:w-[45%] h-[40vh] md:h-full relative overflow-hidden group shrink-0">
+            <div className="w-full md:w-[45%] h-[30vh] md:h-full relative overflow-hidden group shrink-0">
               <img 
                 src={selectedItem.image} 
                 className="w-full h-full object-cover"
@@ -126,41 +147,44 @@ export default function Highlights() {
               <div className="absolute inset-0 bg-black/20" />
               {/* Play Button Overlay */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-500">
-                  <div className="w-0 h-0 border-t-[8px] border-t-transparent border-l-[14px] border-l-white border-b-[8px] border-b-transparent ml-1" />
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-500">
+                  <div className="w-0 h-0 border-t-[6px] md:border-t-[8px] border-t-transparent border-l-[12px] md:border-l-[14px] border-l-white border-b-[6px] md:border-b-[8px] border-b-transparent ml-1" />
                 </div>
               </div>
             </div>
 
             {/* Right Side: Content */}
-            <div className="flex-1 h-full p-8 md:p-12 lg:p-20 flex flex-col justify-between overflow-hidden">
-              <div className="max-w-2xl flex flex-col h-full">
+            <div className="flex-1 h-full p-6 md:p-12 lg:p-20 flex flex-col overflow-hidden">
+              <div className="max-w-2xl flex flex-col h-full pt-10 md:pt-0">
                 {/* Category Tag */}
-                <div className="mb-8">
-                  <span className="px-5 py-1.5 bg-gray-800/50 rounded-full text-[10px] uppercase tracking-widest text-gray-300 border border-white/5">
+                <div className="mb-4 md:mb-8">
+                  <span className="px-4 py-1.5 bg-gray-800/50 rounded-full text-[9px] md:text-[10px] uppercase tracking-widest text-gray-300 border border-white/5">
                     {language === 'en' ? selectedItem.role : selectedItem.roleEs}
                   </span>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight leading-tight">
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 md:mb-8 tracking-tight leading-tight">
                   {language === 'en' ? selectedItem.name : selectedItem.nameEs}
                 </h2>
 
                 {/* Subtitle */}
-                <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6 font-medium">
+                <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-4 md:mb-6 font-medium">
                   LOREM IPSUM
                 </h3>
 
-                {/* Description - Scrollable if needed but contained */}
+                {/* Description - Scrollable area */}
                 <div 
                   ref={scrollRef}
                   onMouseDown={handleMouseDown}
+                  onTouchStart={handleTouchStart}
                   onMouseLeave={handleMouseLeave}
                   onMouseUp={handleMouseUp}
+                  onTouchEnd={handleMouseUp}
                   onMouseMove={handleMouseMove}
+                  onTouchMove={handleTouchMove}
                   data-lenis-prevent
-                  className="flex-1 space-y-6 text-gray-400 font-light leading-relaxed text-xs md:text-sm overflow-y-auto scrollbar-hide pr-4 mb-8 select-none touch-pan-y"
+                  className="flex-1 space-y-4 md:space-y-6 text-gray-400 font-light leading-relaxed text-xs md:text-sm overflow-y-auto scrollbar-hide pr-2 mb-6 select-none touch-pan-y"
                 >
                   <p>
                     {language === 'en' ? selectedItem.description : selectedItem.descriptionEs}
@@ -173,12 +197,12 @@ export default function Highlights() {
                   </p>
                 </div>
 
-                {/* Mini Gallery - Fixed at bottom */}
-                <div className="mt-auto grid grid-cols-2 gap-4 shrink-0">
-                  <div className="aspect-video rounded-xl overflow-hidden border border-white/5">
+                {/* Mini Gallery - Hidden on very small screens to save space, or adjusted */}
+                <div className="mt-auto grid grid-cols-2 gap-3 shrink-0 pb-4 md:pb-0">
+                  <div className="aspect-video rounded-lg md:rounded-xl overflow-hidden border border-white/5">
                     <img src={selectedItem.image} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Gallery 1" referrerPolicy="no-referrer" />
                   </div>
-                  <div className="aspect-video rounded-xl overflow-hidden border border-white/5">
+                  <div className="aspect-video rounded-lg md:rounded-xl overflow-hidden border border-white/5">
                     <img src={selectedItem.image} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Gallery 2" referrerPolicy="no-referrer" />
                   </div>
                 </div>
