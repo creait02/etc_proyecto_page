@@ -18,6 +18,33 @@ const highlightsData = projects.map((project, index) => ({
 export default function Highlights() {
   const { language } = useLanguage();
   const [selectedItem, setSelectedItem] = useState<typeof highlightsData[0] | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartY(e.pageY - scrollRef.current.offsetTop);
+    setScrollTop(scrollRef.current.scrollTop);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walk = (y - startY) * 2; // Scroll speed
+    scrollRef.current.scrollTop = scrollTop - walk;
+  };
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] text-white overflow-hidden relative">
@@ -126,7 +153,15 @@ export default function Highlights() {
                 </h3>
 
                 {/* Description - Scrollable if needed but contained */}
-                <div className="space-y-6 text-gray-400 font-light leading-relaxed text-xs md:text-sm overflow-y-auto scrollbar-hide pr-4 mb-8">
+                <div 
+                  ref={scrollRef}
+                  onMouseDown={handleMouseDown}
+                  onMouseLeave={handleMouseLeave}
+                  onMouseUp={handleMouseUp}
+                  onMouseMove={handleMouseMove}
+                  data-lenis-prevent
+                  className="flex-1 space-y-6 text-gray-400 font-light leading-relaxed text-xs md:text-sm overflow-y-auto scrollbar-hide pr-4 mb-8 select-none touch-pan-y"
+                >
                   <p>
                     {language === 'en' ? selectedItem.description : selectedItem.descriptionEs}
                   </p>
