@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Lenis from 'lenis';
 
 export default function SmoothScroll({ children, onInit }: { children: React.ReactNode, onInit?: (lenis: Lenis) => void }) {

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { HelpCircle, ArrowRight } from 'lucide-react';
 import { projects } from '../data/mockData';
@@ -18,10 +18,12 @@ const highlightsData = projects.map((project, index) => ({
 export default function Highlights() {
   const { language } = useLanguage();
   const [selectedItem, setSelectedItem] = useState<typeof highlightsData[0] | null>(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
+  const isScrollingRef = useRef(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
@@ -60,6 +62,88 @@ export default function Highlights() {
     scrollRef.current.scrollTop = scrollTop - walk;
   };
 
+  // Handle horizontal scroll between projects in detail view
+  useEffect(() => {
+    if (!selectedItem) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (isScrollingRef.current) return;
+      
+      // If the inner text container is being scrolled, don't switch projects
+      // We check if the target is within the scrollable description
+      const isInsideScrollable = (e.target as HTMLElement).closest('[data-lenis-prevent]');
+      if (isInsideScrollable) {
+        const el = isInsideScrollable as HTMLElement;
+        const isAtTop = el.scrollTop === 0;
+        const isAtBottom = Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) < 1;
+        
+        // Only allow project switch if scrolling up at top or down at bottom
+        if (e.deltaY > 0 && !isAtBottom) return;
+        if (e.deltaY < 0 && !isAtTop) return;
+      }
+
+      if (Math.abs(e.deltaY) > 30) {
+        if (e.deltaY > 0 && currentIndex < highlightsData.length - 1) {
+          isScrollingRef.current = true;
+          setCurrentIndex(prev => prev + 1);
+          setSelectedItem(highlightsData[currentIndex + 1]);
+          setTimeout(() => { isScrollingRef.current = false; }, 800);
+        } else if (e.deltaY < 0 && currentIndex > 0) {
+          isScrollingRef.current = true;
+          setCurrentIndex(prev => prev - 1);
+          setSelectedItem(highlightsData[currentIndex - 1]);
+          setTimeout(() => { isScrollingRef.current = false; }, 800);
+        }
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [selectedItem, currentIndex]);
+
+  const handleSelect = (item: typeof highlightsData[0], index: number) => {
+    setSelectedItem(item);
+    setCurrentIndex(index);
+  };
+
+  const [touchStartY, setTouchStartY] = useState(0);
+
+  const handleTouchStartDetail = (e: React.TouchEvent) => {
+    setTouchStartY(e.touches[0].pageY);
+  };
+
+  const handleTouchEndDetail = (e: React.TouchEvent) => {
+    if (isScrollingRef.current || !selectedItem) return;
+
+    const touchEndY = e.changedTouches[0].pageY;
+    const deltaY = touchStartY - touchEndY;
+
+    // If the inner text container is being scrolled, don't switch projects
+    const isInsideScrollable = (e.target as HTMLElement).closest('[data-lenis-prevent]');
+    if (isInsideScrollable) {
+      const el = isInsideScrollable as HTMLElement;
+      const isAtTop = el.scrollTop === 0;
+      const isAtBottom = Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) < 1;
+      
+      if (deltaY > 0 && !isAtBottom) return;
+      if (deltaY < 0 && !isAtTop) return;
+    }
+
+    if (Math.abs(deltaY) > 50) {
+      if (deltaY > 0 && currentIndex < highlightsData.length - 1) {
+        isScrollingRef.current = true;
+        setCurrentIndex(prev => prev + 1);
+        setSelectedItem(highlightsData[currentIndex + 1]);
+        setTimeout(() => { isScrollingRef.current = false; }, 800);
+      } else if (deltaY < 0 && currentIndex > 0) {
+        isScrollingRef.current = true;
+        setCurrentIndex(prev => prev - 1);
+        setSelectedItem(highlightsData[currentIndex - 1]);
+        setTimeout(() => { isScrollingRef.current = false; }, 800);
+      }
+    }
+  };
+
   return (
     <div className="w-full h-full bg-[#0a0a0a] text-white overflow-hidden relative">
       <AnimatePresence mode="wait">
@@ -81,19 +165,20 @@ export default function Highlights() {
             {/* Grid Container - Fills remaining space */}
             <div className="flex-1 w-full min-h-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grid-rows-2 gap-4 h-full">
-                {highlightsData.slice(0, 8).map((item) => (
+                {highlightsData.slice(0, 8).map((item, index) => (
                   <motion.div 
                     key={item.id}
                     layoutId={`card-${item.id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: item.id * 0.05 }}
-                    onClick={() => setSelectedItem(item)}
+                    onClick={() => handleSelect(item, index)}
                     className="bg-[#151515] rounded-2xl overflow-hidden group hover:bg-[#1a1a1a] transition-colors duration-500 border border-white/5 flex flex-col h-full cursor-pointer"
                   >
                     <div className="flex-1 overflow-hidden relative">
-                      <img 
-                        src={item.image} 
+                      <motion.img 
+                        layoutId={`project-image-${item.id}`}
+                        src={(item as any).image_url || item.image} 
                         alt={language === 'en' ? item.name : item.nameEs}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         referrerPolicy="no-referrer"
@@ -114,11 +199,13 @@ export default function Highlights() {
           </motion.div>
         ) : (
           <motion.div 
-            key="detail"
+            key={`detail-${selectedItem.id}`}
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 100 }}
+            exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            onTouchStart={handleTouchStartDetail}
+            onTouchEnd={handleTouchEndDetail}
             className="w-full h-full flex flex-col md:flex-row bg-[#0a0a0a] relative overflow-hidden"
           >
             {/* Back Button - Relocated to Top Left but below the header logo for better UX */}
@@ -138,8 +225,9 @@ export default function Highlights() {
 
             {/* Left Side: Main Visual */}
             <div className="w-full md:w-[45%] h-[30vh] md:h-full relative overflow-hidden group shrink-0">
-              <img 
-                src={selectedItem.image} 
+              <motion.img 
+                layoutId={`project-image-${selectedItem.id}`}
+                src={(selectedItem as any).image_url || selectedItem.image} 
                 className="w-full h-full object-cover"
                 alt={selectedItem.name}
                 referrerPolicy="no-referrer"

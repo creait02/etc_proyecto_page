@@ -167,6 +167,7 @@ function ProjectsSlideshow({ onSelectProject }: { onSelectProject: (p: Project) 
           {/* Background Image */}
           <div className="absolute inset-0">
             <motion.img 
+              layoutId={`project-image-${currentProject.id}`}
               src={currentProject.image_url || currentProject.image} 
               alt={language === 'es' ? (currentProject.title_es || currentProject.titleEs) : (currentProject.title_en || currentProject.title)} 
               className="w-full h-full object-cover"

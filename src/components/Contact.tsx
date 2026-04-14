@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { Send } from 'lucide-react';
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Footer from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteData } from '../contexts/SiteContext';

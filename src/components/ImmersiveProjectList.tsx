@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 import { useScroll, useTransform, motion, MotionValue } from 'motion/react';
 import { projects, Project } from '../data/mockData';
 import { ArrowRight } from 'lucide-react';
@@ -54,21 +54,21 @@ export default function ImmersiveProjectList({ onSelectProject }: ImmersiveProje
   );
 }
 
-function ProjectSlide({ 
-  project, 
-  index, 
-  total, 
-  scrollYProgress,
-  transitionType,
-  onSelect 
-}: { 
+const ProjectSlide: React.FC<{ 
   project: Project; 
   index: number; 
   total: number;
   scrollYProgress: MotionValue<number>;
   transitionType: 'vertical' | 'horizontal';
   onSelect: () => void;
-}) {
+}> = ({ 
+  project, 
+  index, 
+  total, 
+  scrollYProgress,
+  transitionType,
+  onSelect 
+}) => {
   const step = 1 / (total - 1);
   const { language } = useLanguage();
   
@@ -156,8 +156,8 @@ function ProjectSlide({
         >
           <div className="absolute inset-0 bg-black/20 z-10" />
           <img 
-            src={project.image_url || project.image} 
-            alt={language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)} 
+            src={project.image} 
+            alt={language === 'es' ? project.titleEs : project.title} 
             className="w-full h-full object-cover"
           />
         </motion.div>
@@ -168,15 +168,15 @@ function ProjectSlide({
         className="relative z-20 text-center text-white px-6 max-w-5xl mx-auto"
       >
         <span className="inline-block text-sm md:text-base uppercase tracking-[0.3em] mb-6 text-white/70 shadow-black drop-shadow-md">
-          {language === 'es' ? (project.category_es || project.categoryEs) : (project.category_en || project.category)}
+          {language === 'es' ? project.categoryEs : project.category}
         </span>
         
         <h2 className="text-5xl md:text-7xl lg:text-9xl font-light uppercase tracking-tight mb-8 leading-[0.9] drop-shadow-2xl">
-          {language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
+          {language === 'es' ? project.titleEs : project.title}
         </h2>
 
         <p className="text-lg md:text-xl font-light text-white/90 max-w-2xl mx-auto mb-12 leading-relaxed drop-shadow-lg">
-          {language === 'es' ? (project.description_es || project.descriptionEs) : (project.description_en || project.description)}
+          {language === 'es' ? project.descriptionEs : project.description}
         </p>
 
         <button
@@ -191,15 +191,15 @@ function ProjectSlide({
   );
 }
 
-function ProgressDot({ 
-  index, 
-  total, 
-  scrollYProgress 
-}: { 
+const ProgressDot: React.FC<{ 
   index: number; 
   total: number; 
   scrollYProgress: MotionValue<number>;
-}) {
+}> = ({ 
+  index, 
+  total, 
+  scrollYProgress 
+}) => {
   const step = 1 / (total - 1);
   const activePoint = index * step;
   

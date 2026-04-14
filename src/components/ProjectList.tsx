@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { projects, Project } from '../data/mockData';
 import ProjectCard from './ProjectCard';
-import ProjectModal from './ProjectModal';
+import ProjectView from './ProjectView';
 import { useSiteData } from '../contexts/SiteContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -37,7 +37,7 @@ export default function ProjectList() {
         ))}
       </div>
 
-      <ProjectModal 
+      <ProjectView 
         project={selectedProject} 
         onClose={() => setSelectedProject(null)} 
       />

@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useScroll } from 'motion/react';
 import { X, ArrowLeft } from 'lucide-react';
 import { Project, ProjectImage } from '../data/mockData';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProjectViewProps {
@@ -88,6 +88,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
           className="fixed inset-0 z-[70] bg-black text-white overflow-hidden flex flex-col"
         >
           {/* Close Button */}
@@ -101,7 +102,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
           {/* Horizontal Scroll Container */}
           <div 
             ref={scrollContainerRef}
-            className="flex-1 overflow-x-auto flex items-center gap-4 md:gap-8 snap-x snap-mandatory scrollbar-hide cursor-grab active:cursor-grabbing"
+            className="flex-1 overflow-x-auto flex items-center snap-x snap-mandatory scrollbar-hide cursor-grab active:cursor-grabbing"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             onMouseDown={handleMouseDown}
             onMouseLeave={handleMouseLeave}
@@ -113,8 +114,8 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
               <div className="absolute inset-0 z-0">
                 <motion.img
                   layoutId={`project-image-${project.id}`}
-                  src={project.image_url || project.image}
-                  alt={language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
+                  src={(project as any).image_url || project.image}
+                  alt={language === 'es' ? project.titleEs : project.title}
                   className="w-full h-full object-cover opacity-60 pointer-events-none"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
@@ -127,7 +128,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
                   transition={{ delay: 0.3 }}
                   className="flex items-center flex-wrap gap-4 mb-4 text-[9px] md:text-[11px] uppercase tracking-[0.2em] text-gray-300 font-medium"
                 >
-                  <span>{language === 'es' ? (project.category_es || project.categoryEs) : (project.category_en || project.category)}</span>
+                  <span>{language === 'es' ? project.categoryEs : project.category}</span>
                   <span className="w-[1px] h-3 bg-gray-400 hidden md:inline-block"></span>
                   <span className="text-gray-400">{t('project.studio')}</span>
                 </motion.div>
@@ -138,7 +139,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
                   transition={{ delay: 0.4, duration: 0.8 }}
                   className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase"
                 >
-                  {language === 'es' ? (project.title_es || project.titleEs) : (project.title_en || project.title)}
+                  {language === 'es' ? project.titleEs : project.title}
                 </motion.h1>
                 
                 <motion.p 
@@ -147,151 +148,172 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
                   transition={{ delay: 0.6 }}
                   className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light"
                 >
-                  {language === 'es' ? (project.description_es || project.descriptionEs) : (project.description_en || project.description)}
+                  {language === 'es' ? project.descriptionEs : project.description}
                 </motion.p>
               </div>
             </div>
 
-            {/* Spacer between Hero and Gallery to allow centering */}
-            <div className="w-[10vw] shrink-0" />
+            {/* SLIDE 2: INFO SECTION (Split Screen) */}
+            <div className="snap-start shrink-0 w-screen h-screen flex flex-col md:flex-row bg-[#0a0a0a] relative overflow-hidden cursor-default">
+              <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden">
+                <img 
+                  src={(project as any).image_url || project.image} 
+                  alt={project.title} 
+                  className="w-full h-full object-cover opacity-80"
+                />
+                <div className="absolute inset-0 bg-black/20" />
+              </div>
+              <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-[#0a0a0a]">
+                <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">
+                  {language === 'es' ? 'Concepto de Diseño' : 'Design Concept'}
+                </span>
+                <h2 className="text-4xl md:text-6xl font-light uppercase tracking-tight mb-8 leading-tight">
+                  {language === 'es' ? 'Diseño más allá de los límites' : 'Design beyond boundaries'}
+                </h2>
+                <p className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl">
+                  {language === 'es' ? project.descriptionEs : project.description}
+                  {" "}
+                  {language === 'es' 
+                    ? "Nuestro enfoque integra la funcionalidad con una estética audaz, creando espacios que inspiran y perduran en el tiempo."
+                    : "Our approach integrates functionality with bold aesthetics, creating spaces that inspire and endure over time."}
+                </p>
+                <div className="mt-12 w-24 h-[1px] bg-white/20" />
+              </div>
+            </div>
 
-            {/* SLIDE 2+: GALLERY */}
-            {project.gallery?.map((img, index) => (
-              <GalleryCard 
-                key={index}
-                image={img}
+            {/* GALLERY SLIDES (Split Screen Style with Animation) */}
+            {project.gallery?.map((img, idx) => (
+              <GallerySlide 
+                key={`${project.id}-gallery-${idx}`}
+                img={img}
+                idx={idx}
                 containerRef={scrollContainerRef}
-                onClick={() => {
-                  if (!isDragging) setSelectedImage(img);
-                }}
+                language={language}
               />
             ))}
 
-            {/* Spacer for end */}
+            {/* Final Spacer */}
             <div className="w-[30vw] shrink-0" />
           </div>
-
-          {/* 3D Image Overlay */}
-          <AnimatePresence>
-            {selectedImage && (
-              <ImageOverlay image={selectedImage} onClose={() => setSelectedImage(null)} />
-            )}
-          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
-function GalleryCard({ image, containerRef, onClick }: { image: ProjectImage, containerRef: React.RefObject<HTMLDivElement>, onClick: () => void }) {
+const GallerySlide: React.FC<{ 
+  img: ProjectImage, 
+  idx: number, 
+  containerRef: React.RefObject<HTMLDivElement>,
+  language: string
+}> = ({ img, idx, containerRef, language }) => {
   const ref = useRef<HTMLDivElement>(null);
   
   const { scrollXProgress } = useScroll({
     target: ref,
     container: containerRef,
     axis: "x",
-    offset: ["center end", "center start"]
+    offset: ["start end", "end start"]
   });
 
-  // 3D Carousel Effects
-  const rotateY = useTransform(scrollXProgress, [0, 0.5, 1], [45, 0, -45]);
-  const scale = useTransform(scrollXProgress, [0, 0.5, 1], [0.8, 1.1, 0.8]);
-  const opacity = useTransform(scrollXProgress, [0, 0.5, 1], [0.4, 1, 0.4]);
-  const z = useTransform(scrollXProgress, [0, 0.5, 1], [-200, 0, -200]);
+  // Animation values based on scroll progress
+  const imageScale = useTransform(scrollXProgress, [0, 0.5, 1], [1.2, 1, 1.2]);
+  const textX = useTransform(scrollXProgress, [0, 0.5, 1], [idx % 2 === 0 ? 100 : -100, 0, idx % 2 === 0 ? -100 : 100]);
+  const opacity = useTransform(scrollXProgress, [0.1, 0.4, 0.6, 0.9], [0, 1, 1, 0]);
+  const brightness = useTransform(scrollXProgress, [0, 0.5, 1], [0.5, 1, 0.5]);
 
   return (
-    <div className="snap-center shrink-0 perspective-[1000px] py-24">
-      <motion.div 
-        ref={ref}
-        style={{ 
-          rotateY, 
-          scale, 
-          opacity,
-          z,
-          transformStyle: "preserve-3d"
-        }}
-        className="w-[70vw] md:w-[50vw] lg:w-[40vw] h-[50vh] md:h-[60vh] flex flex-col group cursor-pointer"
-        onClick={onClick}
-      >
-        <div className="relative w-full h-full overflow-hidden bg-gray-900 rounded-sm shadow-2xl">
-          <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10 pointer-events-none" />
-          <motion.img 
-            src={image.url} 
-            alt="Gallery image" 
-            className="w-full h-full object-cover pointer-events-none"
-          />
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function ImageOverlay({ image, onClose }: { image: ProjectImage, onClose: () => void }) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const mouseX = useSpring(x, { stiffness: 150, damping: 15 });
-  const mouseY = useSpring(y, { stiffness: 150, damping: 15 });
-  const { language, t } = useLanguage();
-
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ["5deg", "-5deg"]);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-5deg", "5deg"]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseXFromCenter = e.clientX - rect.left - width / 2;
-    const mouseYFromCenter = e.clientY - rect.top - height / 2;
-    x.set(mouseXFromCenter / width);
-    y.set(mouseYFromCenter / height);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 perspective-1000"
+    <motion.div 
+      ref={ref}
+      style={{ opacity }}
+      className="snap-start shrink-0 w-screen h-screen flex flex-col md:flex-row bg-[#0a0a0a] relative overflow-hidden cursor-default"
     >
-      <button 
-        onClick={onClose}
-        className="absolute top-6 left-6 md:top-12 md:left-12 z-50 p-3 bg-white/10 rounded-full text-white hover:bg-white hover:text-black transition-colors flex items-center gap-2"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="text-xs uppercase tracking-widest hidden md:inline-block pr-2">{t('project.back')}</span>
-      </button>
-
-      <motion.div
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        style={{ 
-          rotateX, 
-          rotateY,
-          transformStyle: "preserve-3d"
-        }}
-        className="relative w-full max-w-5xl aspect-video rounded-xl shadow-2xl"
-      >
-        <img 
-          src={image.url} 
-          alt="Enlarged view" 
-          className="w-full h-full object-cover rounded-xl"
-        />
-        
-        {/* Floating Text Card inside 3D container */}
-        <div 
-          style={{ transform: "translateZ(50px)" }}
-          className="absolute bottom-6 left-6 md:bottom-12 md:left-12 bg-black/60 backdrop-blur-md p-6 md:p-8 max-w-md rounded-lg border border-white/10"
-        >
-          <p className="text-white font-light text-sm md:text-base leading-relaxed">
-            {language === 'es' ? image.descriptionEs : image.description}
-          </p>
-        </div>
-      </motion.div>
+      {/* Alternate layout: even index image-left, odd index image-right */}
+      {idx % 2 === 0 ? (
+        <>
+          <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden">
+            <motion.img 
+              src={img.url} 
+              alt={img.description} 
+              style={{ scale: imageScale, filter: useTransform(brightness, b => `brightness(${b})`) }}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/10" />
+          </div>
+          <motion.div 
+            style={{ x: textX }}
+            className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-[#0a0a0a]"
+          >
+            <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">
+              {language === 'es' ? 'Detalle del Proyecto' : 'Project Detail'}
+            </span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-3xl md:text-5xl font-light uppercase tracking-tight mb-8 leading-tight"
+            >
+              {language === 'es' ? 'Excelencia en cada detalle' : 'Excellence in every detail'}
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl"
+            >
+              {language === 'es' ? img.descriptionEs : img.description}
+            </motion.p>
+            <motion.div 
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="mt-12 w-24 h-[1px] bg-white/20 origin-left" 
+            />
+          </motion.div>
+        </>
+      ) : (
+        <>
+          <motion.div 
+            style={{ x: textX }}
+            className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-[#0a0a0a] order-2 md:order-1"
+          >
+            <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">
+              {language === 'es' ? 'Perspectiva' : 'Perspective'}
+            </span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-3xl md:text-5xl font-light uppercase tracking-tight mb-8 leading-tight"
+            >
+              {language === 'es' ? 'Visión Arquitectónica' : 'Architectural Vision'}
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl"
+            >
+              {language === 'es' ? img.descriptionEs : img.description}
+            </motion.p>
+            <motion.div 
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="mt-12 w-24 h-[1px] bg-white/20 origin-left" 
+            />
+          </motion.div>
+          <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden order-1 md:order-2">
+            <motion.img 
+              src={img.url} 
+              alt={img.description} 
+              style={{ scale: imageScale, filter: useTransform(brightness, b => `brightness(${b})`) }}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/10" />
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }
