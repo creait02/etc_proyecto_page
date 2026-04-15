@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { fallbackTeamMembers } from '../constants';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -24,7 +25,7 @@ export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
   
   // Elementor-like Editor State
-  const [activeEditor, setActiveEditor] = useState<{ section: string, element: string, projectId?: string, memberId?: string } | null>(null);
+  const [activeEditor, setActiveEditor] = useState<{ section: string, element: string, projectId?: string | number, memberId?: string | number } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -41,7 +42,7 @@ export default function Dashboard() {
         } else if (section === 'projects') {
           setActiveTab('projects');
           if (projectId) {
-            const proj = projects.find(p => p.id === projectId);
+            const proj = projects.find(p => String(p.id) === String(projectId));
             if (proj) setEditingProject(proj);
           }
         } else if (section === 'contact') {
@@ -49,8 +50,14 @@ export default function Dashboard() {
         } else if (section === 'team') {
           setActiveTab('team');
           if (memberId) {
-            const member = teamMembers.find(m => m.id === memberId);
-            if (member) setEditingMember(member);
+            let member = teamMembers.find(m => String(m.id) === String(memberId));
+            if (!member) {
+              // Check fallbacks if not in DB
+              member = fallbackTeamMembers.find(m => String(m.id) === String(memberId));
+            }
+            if (member) {
+              setEditingMember(member);
+            }
           }
         }
       }
@@ -564,12 +571,12 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Foto del Miembro</label>
                     <div className="space-y-3">
-                      {editingMember.image_url && (
+                      {(editingMember.image_url || editingMember.image) && (
                         <div 
                           onClick={() => document.getElementById('quick-member-upload')?.click()}
                           className="w-full h-40 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
                         >
-                          <img src={editingMember.image_url} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                          <img src={editingMember.image_url || editingMember.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
                           <div className="absolute inset-0 flex items-center justify-center">
                             <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded group-hover:bg-white group-hover:text-black transition-colors">Cambiar Foto</span>
                           </div>
@@ -583,7 +590,7 @@ export default function Dashboard() {
                         disabled={isUploading}
                         className="hidden" 
                       />
-                      {!editingMember.image_url && (
+                      {!(editingMember.image_url || editingMember.image) && (
                         <button 
                           onClick={() => document.getElementById('quick-member-upload')?.click()}
                           className="w-full py-8 border border-dashed border-white/20 rounded flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-white hover:border-white/40 transition-all"
@@ -687,12 +694,12 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Foto del Miembro</label>
                     <div className="space-y-3">
-                      {editingMember.image_url && (
+                      {(editingMember.image_url || editingMember.image) && (
                         <div 
                           onClick={() => document.getElementById('member-upload-input')?.click()}
                           className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
                         >
-                          <img src={editingMember.image_url} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                          <img src={editingMember.image_url || editingMember.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
                           <div className="absolute inset-0 flex items-center justify-center">
                             <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded group-hover:bg-white group-hover:text-black transition-colors">Cambiar Foto</span>
                           </div>
