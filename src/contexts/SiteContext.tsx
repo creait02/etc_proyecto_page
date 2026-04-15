@@ -1,18 +1,46 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { projects as mockProjects } from '../data/mockData';
 
 interface SiteContextType {
   settings: any;
   projects: any[];
+  teamMembers: any[];
   loading: boolean;
   isAdminPreview: boolean;
 }
 
-const SiteContext = createContext<SiteContextType>({ settings: {}, projects: [], loading: true, isAdminPreview: false });
+const defaultSettings = {
+  home_title_en: "ETC PROYECTO",
+  home_title_es: "ETC PROYECTO",
+  home_subtitle_en: "Architecture & Design Studio",
+  home_subtitle_es: "Estudio de Arquitectura y Diseño",
+  contact_email: "info@etcproyecto.com",
+  contact_phone: "+58 412 000 0000",
+  contact_address: "Caracas, Venezuela",
+  logo_url: "https://res.cloudinary.com/debywjrlg/image/upload/v1773851845/logo_ETC_white_zlrhe4.png",
+  team_title_es: "Estudio\nTransformación\nConstrucción",
+  team_title_en: "Studio\nTransformation\nConstruction",
+  team_subtitle_es: "LOREM IPSUM",
+  team_subtitle_en: "LOREM IPSUM",
+  team_description_es: "Nuestro equipo reúne a arquitectos, ingenieros y especialistas en construcción líderes en la industria para entregar proyectos complejos a gran escala con una calidad sin concesiones. Cada estructura que creamos refleja un equilibrio entre la excelencia técnica, el diseño refinado y el valor a largo plazo.",
+  team_description_en: "Our team brings together industry-leading architects, engineers, and construction specialists to deliver complex, large-scale projects with uncompromising quality. Every structure we create reflects a balance between technical excellence, refined design, and long-term value.",
+  team_tags_es: "Ingeniería, Arquitectura, Diseño",
+  team_tags_en: "Engineering, Architecture, Design"
+};
+
+const SiteContext = createContext<SiteContextType>({ 
+  settings: defaultSettings, 
+  projects: mockProjects, 
+  teamMembers: [], 
+  loading: true, 
+  isAdminPreview: false 
+});
 
 export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
-  const [settings, setSettings] = useState<any>({});
-  const [projects, setProjects] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>(defaultSettings);
+  const [projects, setProjects] = useState<any[]>(mockProjects);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdminPreview, setIsAdminPreview] = useState(false);
 
@@ -24,14 +52,36 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     // 1. Fetch initial data from Supabase
     const fetchData = async () => {
       try {
-        const [setRes, projRes] = await Promise.all([
+        const [setRes, projRes, teamRes] = await Promise.all([
           supabase.from('site_settings').select('*').single(),
-          supabase.from('projects').select('*').order('created_at', { ascending: false })
+          supabase.from('projects').select('*').order('created_at', { ascending: false }),
+          supabase.from('team_members').select('*').order('order', { ascending: true })
         ]);
-        if (setRes.data) setSettings(setRes.data);
-        if (projRes.data) setProjects(projRes.data);
-      } catch (error) {
-        console.error('Error fetching site data:', error);
+        
+        if (setRes.data) {
+          setSettings({ ...defaultSettings, ...setRes.data });
+        } else {
+          console.warn('No site settings found in Supabase, using defaults.');
+        }
+
+        if (projRes.data && projRes.data.length > 0) {
+          setProjects(projRes.data);
+        } else {
+          console.warn('No projects found in Supabase, using mock data.');
+        }
+
+        if (teamRes.data && teamRes.data.length > 0) {
+          setTeamMembers(teamRes.data);
+        } else {
+          console.warn('No team members found in Supabase.');
+        }
+      } catch (error: any) {
+        if (error.message === 'Failed to fetch') {
+          console.warn('Error de conexión con Supabase (Failed to fetch). Usando datos de respaldo.');
+        } else {
+          console.error('Error fetching site data from Supabase:', error);
+        }
+        // Fallback is already set via initial state
       } finally {
         setLoading(false);
       }
@@ -46,6 +96,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         }
         if (event.data.payload.projects) {
           setProjects(event.data.payload.projects);
+        }
+        if (event.data.payload.teamMembers) {
+          setTeamMembers(event.data.payload.teamMembers);
         }
       }
     };

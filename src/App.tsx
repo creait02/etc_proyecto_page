@@ -24,6 +24,7 @@ import { Project, projects } from './data/mockData';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SiteProvider, useSiteData } from './contexts/SiteContext';
 import AdminApp from './admin/AdminApp';
+import { Toaster } from 'sonner';
 
 function MainSite() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -151,6 +152,7 @@ export default function App() {
     <BrowserRouter>
       <SiteProvider>
         <LanguageProvider>
+          <Toaster position="top-right" richColors theme="dark" />
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/*" element={<MainSite />} />

@@ -17,6 +17,13 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
   const scrollLeft = useRef(0);
   const { language, t } = useLanguage();
 
+  // Reset scroll position when project changes
+  useEffect(() => {
+    if (project && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0;
+    }
+  }, [project]);
+
   useEffect(() => {
     if (project) {
       document.body.style.overflow = 'hidden';
@@ -35,7 +42,7 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
     const handleWheel = (e: WheelEvent) => {
       if (selectedImage) return; // Don't scroll horizontally if overlay is open
       if (e.deltaY !== 0) {
-        container.scrollLeft += e.deltaY * 2.5; 
+        container.scrollLeft += e.deltaY * 3.5; // Increased speed for better reach
         e.preventDefault();
       }
     };
@@ -192,14 +199,74 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
               />
             ))}
 
-            {/* Final Spacer */}
-            <div className="w-[30vw] shrink-0" />
+            {/* FINAL SUMMARY GRID SLIDE */}
+            {project.gallery && project.gallery.length > 0 && (
+              <SummaryGridSlide project={project} />
+            )}
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
+
+const SummaryGridSlide: React.FC<{ project: Project }> = ({ project }) => {
+  // Use up to 5 images for the grid, fallback to repeating if less than 5 but at least 3
+  const galleryImages = project.gallery || [];
+  const displayImages = [...galleryImages];
+  while (displayImages.length < 5 && displayImages.length > 0) {
+    displayImages.push(...galleryImages);
+  }
+  const images = displayImages.slice(0, 5);
+
+  return (
+    <div className="snap-start shrink-0 w-screen h-screen bg-[#050505] flex flex-col p-4 md:p-8 lg:p-12 gap-4 md:gap-4 overflow-hidden">
+      {/* Top Row: 2 Columns - More dominant */}
+      <div className="flex-[1.4] grid grid-cols-2 gap-4 md:gap-4">
+        {images.slice(0, 2).map((img, idx) => (
+          <motion.div 
+            key={`summary-top-${idx}`}
+            initial={{ opacity: 0, scale: 1.1, y: 20 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: idx * 0.2 }}
+            className="relative overflow-hidden rounded-sm group"
+          >
+            <motion.img 
+              src={img.url} 
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              alt="" 
+              whileHover={{ scale: 1.1 }}
+            />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Bottom Row: 3 Columns - Supportive base */}
+      <div className="flex-1 grid grid-cols-3 gap-4 md:gap-4">
+        {images.slice(2, 5).map((img, idx) => (
+          <motion.div 
+            key={`summary-bottom-${idx}`}
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 + idx * 0.15 }}
+            className="relative overflow-hidden rounded-sm group"
+          >
+            <motion.img 
+              src={img.url} 
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              alt="" 
+              whileHover={{ scale: 1.1 }}
+            />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const GallerySlide: React.FC<{ 
   img: ProjectImage, 
@@ -219,7 +286,7 @@ const GallerySlide: React.FC<{
   // Animation values based on scroll progress
   const imageScale = useTransform(scrollXProgress, [0, 0.5, 1], [1.2, 1, 1.2]);
   const textX = useTransform(scrollXProgress, [0, 0.5, 1], [idx % 2 === 0 ? 100 : -100, 0, idx % 2 === 0 ? -100 : 100]);
-  const opacity = useTransform(scrollXProgress, [0.1, 0.4, 0.6, 0.9], [0, 1, 1, 0]);
+  const opacity = useTransform(scrollXProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
   const brightness = useTransform(scrollXProgress, [0, 0.5, 1], [0.5, 1, 0.5]);
 
   return (

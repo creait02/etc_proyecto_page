@@ -11,6 +11,14 @@ export default function AdminApp() {
     // Force default cursor in admin area
     document.body.style.cursor = 'auto';
 
+    // Check for demo session first
+    const isDemo = localStorage.getItem('etc_demo_session') === 'true';
+    if (isDemo) {
+      setSession({ user: { email: 'demo@etcproyecto.com' }, isDemo: true });
+      setLoading(false);
+      return;
+    }
+
     // Check active session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {

@@ -1,8 +1,10 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteData } from '../contexts/SiteContext';
+import Editable from './Editable';
 
-const teamMembers = [
+const fallbackTeamMembers = [
   { id: 1, name: 'Juan Montilla', role: 'CEO & Founder', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop' },
   { id: 2, name: 'Andrés García', role: 'Lead Architect', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop' },
   { id: 3, name: 'Valentina Soto', role: 'Interior Designer', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop' },
@@ -15,9 +17,19 @@ const teamMembers = [
 
 export default function Team() {
   const { language } = useLanguage();
+  const { settings, teamMembers: liveTeamMembers } = useSiteData();
   const [step, setStep] = useState(1);
-  const [expandedMemberId, setExpandedMemberId] = useState<number | null>(null);
+  const [expandedMemberId, setExpandedMemberId] = useState<number | string | null>(null);
   const isScrollingRef = useRef(false);
+
+  const teamMembers = liveTeamMembers && liveTeamMembers.length > 0 ? liveTeamMembers : fallbackTeamMembers;
+
+  // Get live settings or fallback
+  const title = language === 'es' ? (settings?.team_title_es || 'Estudio\nTransformación\nConstrucción') : (settings?.team_title_en || 'Studio\nTransformation\nConstruction');
+  const subtitle = language === 'es' ? (settings?.team_subtitle_es || 'LOREM IPSUM') : (settings?.team_subtitle_en || 'LOREM IPSUM');
+  const description = language === 'es' ? (settings?.team_description_es || 'Our team brings together industry-leading architects, engineers, and construction specialists to deliver complex, large-scale projects with uncompromising quality.') : (settings?.team_description_en || 'Our team brings together industry-leading architects, engineers, and construction specialists to deliver complex, large-scale projects with uncompromising quality.');
+  const tagsStr = language === 'es' ? (settings?.team_tags_es || 'Ingeniería, Arquitectura, Diseño') : (settings?.team_tags_en || 'Engineering, Architecture, Design');
+  const tags = tagsStr.split(',').map((t: string) => t.trim());
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -57,16 +69,20 @@ export default function Team() {
           >
             {/* Left Side */}
             <div className="flex-1 flex flex-col justify-center items-start">
-              <div className="flex gap-4 mb-12">
-                {['Engineer', 'Architecture', 'Design'].map((tag) => (
-                  <span key={tag} className="px-4 py-1 border border-white/20 rounded-full text-[10px] uppercase tracking-widest text-gray-400">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <h1 className="text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight uppercase max-w-xl">
-                Estudio<br />Transformación<br />Construcción
-              </h1>
+              <Editable section="team" element="tags">
+                <div className="flex gap-4 mb-12">
+                  {tags.map((tag: string) => (
+                    <span key={tag} className="px-4 py-1 border border-white/20 rounded-full text-[10px] uppercase tracking-widest text-gray-400">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </Editable>
+              <Editable section="team" element="title">
+                <h1 className="text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight uppercase max-w-xl whitespace-pre-line">
+                  {title}
+                </h1>
+              </Editable>
             </div>
 
             {/* Vertical Divider */}
@@ -74,17 +90,16 @@ export default function Team() {
 
             {/* Right Side */}
             <div className="flex-1 flex flex-col justify-center items-start max-w-xl">
-              <h2 className="text-3xl md:text-4xl font-bold uppercase mb-8 tracking-tight">
-                LOREM IPSUM
-              </h2>
-              <div className="space-y-6 text-gray-400 font-light leading-relaxed text-sm md:text-base">
-                <p>
-                  Our team brings together industry-leading architects, engineers, and construction specialists to deliver complex, large-scale projects with uncompromising quality. Every structure we create reflects a balance between technical excellence, refined design, and long-term value.
-                </p>
-                <p>
-                  Our architects, engineers, and construction professionals work as a single, integrated unit. This cohesion allows us to translate ambitious concepts into built realities, ensuring that every decision — from structural systems to material selection — is aligned with the project's broader vision and long-term durability.
-                </p>
-              </div>
+              <Editable section="team" element="subtitle">
+                <h2 className="text-3xl md:text-4xl font-bold uppercase mb-8 tracking-tight">
+                  {subtitle}
+                </h2>
+              </Editable>
+              <Editable section="team" element="description">
+                <div className="space-y-6 text-gray-400 font-light leading-relaxed text-sm md:text-base whitespace-pre-line">
+                  <p>{description}</p>
+                </div>
+              </Editable>
               
               <div className="mt-12 flex items-center gap-4 text-[9px] uppercase tracking-[0.3em] text-gray-500">
                 <div className="w-8 h-[1px] bg-gray-500" />
@@ -102,43 +117,50 @@ export default function Team() {
             className="w-full h-full flex flex-col md:flex-row"
           >
             {teamMembers.map((member, index) => (
-              <motion.div
-                key={member.id}
-                initial={{ opacity: 0, y: 200 }}
-                animate={{ 
-                  opacity: 1, 
-                  y: 0,
-                  flex: expandedMemberId === null ? 1 : (expandedMemberId === member.id ? 2.5 : 0.6)
-                }}
-                transition={{ 
-                  y: { duration: 0.8, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] },
-                  opacity: { duration: 0.8, delay: index * 0.05 },
-                  flex: { duration: 0.35, ease: [0.76, 0, 0.24, 1] } // Aggressive "expo-like" easing
-                }}
-                onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
-                className="relative group overflow-hidden border-b md:border-b-0 md:border-r border-white/10 last:border-b-0 last:border-r-0 cursor-pointer transition-[flex] duration-350 ease-[0.76,0,0.24,1] min-h-0"
+              <Editable 
+                key={member.id} 
+                section="team" 
+                element="member" 
+                memberId={member.id}
+                className="flex-1 min-h-0"
               >
-                <img 
-                  src={member.image} 
-                  alt={member.name}
-                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${expandedMemberId === member.id ? 'grayscale-0 scale-100' : 'grayscale group-hover:grayscale-0 scale-110 group-hover:scale-105'}`}
-                  referrerPolicy="no-referrer"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500 ${expandedMemberId === member.id ? 'opacity-60' : 'opacity-80 group-hover:opacity-40'}`} />
-                
-                {/* Name & Role Container - Always Visible */}
-                <div className={`absolute bottom-6 md:bottom-12 left-0 right-0 md:left-auto md:right-auto md:rotate-[-90deg] md:origin-bottom-left md:left-12 px-6 md:px-0 text-center md:text-left transition-all duration-500 z-10 ${expandedMemberId === member.id ? 'translate-y-0 scale-110' : 'translate-y-0 opacity-100'}`}>
-                  <h3 className="text-base md:text-2xl font-black uppercase tracking-tighter mb-1 whitespace-nowrap text-white drop-shadow-2xl">
-                    {member.name}
-                  </h3>
-                  <p className="text-[10px] md:text-xs uppercase tracking-[0.3em] text-gray-300 font-bold whitespace-nowrap drop-shadow-lg">
-                    {member.role}
-                  </p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 200 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    flex: expandedMemberId === null ? 1 : (expandedMemberId === member.id ? 2.5 : 0.6)
+                  }}
+                  transition={{ 
+                    y: { duration: 0.8, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] },
+                    opacity: { duration: 0.8, delay: index * 0.05 },
+                    flex: { duration: 0.35, ease: [0.76, 0, 0.24, 1] } 
+                  }}
+                  onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
+                  className="relative group h-full overflow-hidden border-b md:border-b-0 md:border-r border-white/10 last:border-b-0 last:border-r-0 cursor-pointer transition-[flex] duration-350 ease-[0.76,0,0.24,1]"
+                >
+                  <img 
+                    src={member.image_url || member.image} 
+                    alt={member.name}
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${expandedMemberId === member.id ? 'grayscale-0 scale-100' : 'grayscale group-hover:grayscale-0 scale-110 group-hover:scale-105'}`}
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${expandedMemberId === member.id ? 'opacity-40' : 'opacity-70 group-hover:opacity-40'}`} />
+                  
+                  {/* Name & Role Container - Visible only when expanded, at the bottom, and smaller */}
+                  <div className={`absolute bottom-10 left-0 right-0 px-6 text-center transition-all duration-700 z-10 ${expandedMemberId === member.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                    <h3 className="text-lg md:text-2xl font-black uppercase tracking-tighter mb-1 whitespace-nowrap text-white drop-shadow-2xl">
+                      {member.name}
+                    </h3>
+                    <p className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] text-gray-300 font-bold whitespace-nowrap">
+                      {member.role_es || member.role}
+                    </p>
+                  </div>
 
-                {/* Aggressive Overlay on Hover/Expand */}
-                <div className={`absolute inset-0 border-4 border-white/0 transition-all duration-300 ${expandedMemberId === member.id ? 'border-white/20' : 'group-hover:border-white/10'}`} />
-              </motion.div>
+                  {/* Aggressive Overlay on Hover/Expand */}
+                  <div className={`absolute inset-0 border-4 border-white/0 transition-all duration-300 ${expandedMemberId === member.id ? 'border-white/20' : 'group-hover:border-white/10'}`} />
+                </motion.div>
+              </Editable>
             ))}
 
             {/* Hint to scroll back */}

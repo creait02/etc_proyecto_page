@@ -4,12 +4,13 @@ import { useSiteData } from '../contexts/SiteContext';
 interface EditableProps {
   section: string;
   element: string;
-  projectId?: string;
+  projectId?: string | number;
+  memberId?: string | number;
   children: React.ReactNode;
   className?: string;
 }
 
-export default function Editable({ section, element, projectId, children, className = '' }: EditableProps) {
+export const Editable: React.FC<EditableProps> = ({ section, element, projectId, memberId, children, className = '' }) => {
   const { isAdminPreview } = useSiteData();
 
   if (!isAdminPreview) {
@@ -24,7 +25,7 @@ export default function Editable({ section, element, projectId, children, classN
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({
         type: 'ELEMENT_CLICKED',
-        payload: { section, element, projectId }
+        payload: { section, element, projectId, memberId }
       }, '*');
     }
   };
@@ -45,4 +46,6 @@ export default function Editable({ section, element, projectId, children, classN
       {children}
     </div>
   );
-}
+};
+
+export default Editable;
