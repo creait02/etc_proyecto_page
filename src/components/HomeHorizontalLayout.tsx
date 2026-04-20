@@ -17,6 +17,7 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
   
   // Get live settings or fallback
   const title = language === 'es' ? (settings?.home_title_es || t('home.designMatters')) : (settings?.home_title_en || t('home.designMatters'));
+  const pretitle = language === 'es' ? (settings?.home_pretitle_es || `${t('home.studio')} | ${t('project.studio')}`) : (settings?.home_pretitle_en || `${t('home.studio')} | ${t('project.studio')}`);
   const subtitle = language === 'es' ? (settings?.home_subtitle_es || 'ETC PROYECTO es un estudio de arquitectura y diseño interior.') : (settings?.home_subtitle_en || 'ETC PROYECTO is an award winning architectural and interior design studio based in Caracas.');
   const bgImage = settings?.home_bg_image; // If empty, we use the video
 
@@ -88,16 +89,16 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
           </Editable>
 
           <div className="max-w-4xl z-10 pointer-events-none select-none text-left">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="flex items-center flex-wrap gap-4 mb-4 text-[9px] md:text-[11px] uppercase tracking-[0.2em] text-gray-300 font-medium"
-            >
-              <span>{t('home.studio')}</span>
-              <span className="w-[1px] h-3 bg-gray-400 hidden md:inline-block"></span>
-              <span className="text-gray-400">{t('project.studio')}</span>
-            </motion.div>
+            <Editable section="home" element="pretitle" className="pointer-events-auto">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-center flex-wrap gap-4 mb-4 text-[9px] md:text-[11px] uppercase tracking-[0.2em] text-gray-300 font-medium"
+              >
+                {pretitle}
+              </motion.div>
+            </Editable>
             
             <Editable section="home" element="title" className="pointer-events-auto">
               <motion.h1 

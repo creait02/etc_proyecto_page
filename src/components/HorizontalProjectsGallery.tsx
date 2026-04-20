@@ -1,35 +1,72 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { projects, Project } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteData } from '../contexts/SiteContext';
+import Editable from './Editable';
 
 interface HorizontalProjectsGalleryProps {
   onSelectProject: (project: Project) => void;
 }
 
-export default function HorizontalProjectsGallery({ onSelectProject }: HorizontalProjectsGalleryProps) {
+const HorizontalProjectsGallery = ({ onSelectProject }: HorizontalProjectsGalleryProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'build' | 'complete'>('all');
   const startX = useRef(0);
   const scrollLeft = useRef(0);
-  const { t } = useLanguage();
-  const { projects: liveProjects } = useSiteData();
+  const { t, language } = useLanguage();
+  const { projects: liveProjects, settings } = useSiteData();
+
+  // Filter labels from CMS settings (Dynamic list)
+  const filterOptions = useMemo(() => {
+    return settings?.project_filters || [
+      { id: 'all', label_en: 'All', label_es: 'Todos' },
+      { id: 'build', label_en: 'Build', label_es: 'En Obra' },
+      { id: 'complete', label_en: 'Complete', label_es: 'Terminados' }
+    ];
+  }, [settings]);
+
+  const [activeFilters, setActiveFilters] = useState<string[]>(['all']);
+
+  const toggleFilter = (id: string) => {
+    setActiveFilters(prev => {
+      if (id === 'all') return ['all'];
+      
+      const next = prev.includes(id) 
+        ? prev.filter(f => f !== id) 
+        : [...prev.filter(f => f !== 'all'), id];
+      
+      return next.length === 0 ? ['all'] : next;
+    });
+  };
 
   // Use live projects if available, otherwise fallback to mock data
-  const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : projects;
+  const displayProjects = useMemo(() => 
+    liveProjects && liveProjects.length > 0 ? liveProjects : projects
+  , [liveProjects]);
 
-  // Filter projects by status
-  const filteredProjects = filter === 'all' 
-    ? displayProjects 
-    : displayProjects.filter((p: any) => p.status === filter);
+  // Filter projects by status or category if status doesn't match
+  const filteredProjects = useMemo(() => {
+    if (activeFilters.includes('all')) return displayProjects;
+    
+    return displayProjects.filter((p: any) => {
+      const pStatuses = String(p.status || '').split(',').map(s => s.trim().toLowerCase());
+      
+      return activeFilters.some(fId => {
+        const lowerFilter = fId.toLowerCase();
+        return pStatuses.includes(lowerFilter) || 
+               (p.category_en || p.category || '').toLowerCase().replace(/\s+/g, '-') === lowerFilter;
+      });
+    });
+  }, [displayProjects, activeFilters]);
 
   // Duplicate projects to create a longer, more immersive carousel
-  // We need at least a few items for the effect to work well
-  const allProjects = filteredProjects.length > 0 
-    ? [...filteredProjects, ...filteredProjects, ...filteredProjects]
-    : [];
+  // Limited to 3 sets to balance performance and visual infinity
+  const allProjects = useMemo(() => 
+    filteredProjects.length > 0 
+      ? [...filteredProjects, ...filteredProjects, ...filteredProjects]
+      : []
+  , [filteredProjects]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
@@ -84,43 +121,44 @@ export default function HorizontalProjectsGallery({ onSelectProject }: Horizonta
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
-  // Reset scroll when filter changes
+  // Reset scroll when filters change
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
     }
-  }, [filter]);
+  }, [activeFilters]);
   
   return (
     <div className="w-full h-full bg-[#050505] text-white overflow-hidden flex flex-col relative cursor-none">
       {/* Filtering UI */}
-      <div className="absolute top-20 md:top-[124px] left-0 w-full z-50 flex justify-center items-center gap-3 md:gap-8 pointer-events-none px-4">
-        {(['all', 'build', 'complete'] as const).map((option) => (
-          <button
-            key={option}
-            onMouseDown={(e) => e.stopPropagation()} // Prevent parent drag from triggering
-            onClick={(e) => {
-              e.stopPropagation();
-              setFilter(option);
-            }}
-            className={`
-              pointer-events-auto
-              px-4 md:px-8 py-2 md:py-2.5 rounded-full border text-[9px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] font-bold transition-all duration-500
-              ${filter === option 
-                ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105 md:scale-110' 
-                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/40 hover:text-white'
-              }
-            `}
-          >
-            {option}
-          </button>
-        ))}
+      <div className="absolute top-24 md:top-28 left-0 w-full z-50 flex justify-center items-center gap-3 md:gap-8 pointer-events-none px-4">
+        <Editable section="projects" element="filters" className="pointer-events-auto flex items-center gap-3 md:gap-8">
+          {filterOptions.map((option: any) => (
+            <button
+              key={option.id}
+              onMouseDown={(e) => e.stopPropagation()} // Prevent parent drag from triggering
+              onClick={(e) => {
+                // Don't stop propagation so Editable can catch it
+                toggleFilter(option.id);
+              }}
+              className={`
+                px-4 md:px-8 py-2 md:py-2.5 rounded-full border text-[9px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] font-bold transition-all duration-500
+                ${activeFilters.includes(option.id) 
+                  ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105 md:scale-110' 
+                  : 'bg-transparent text-gray-500 border-white/10 hover:border-white/40 hover:text-white'
+                }
+              `}
+            >
+              {language === 'es' ? option.label_es : option.label_en}
+            </button>
+          ))}
+        </Editable>
       </div>
 
       {/* Horizontal Scroll Container */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-x-auto flex items-center px-6 md:px-12 gap-8 md:gap-20 snap-x snap-mandatory scrollbar-hide perspective-[1000px] cursor-none pt-32 md:pt-40 pb-20"
+        className="flex-1 overflow-x-auto flex items-center px-6 md:px-12 gap-8 md:gap-20 snap-x snap-mandatory scrollbar-hide perspective-[1000px] cursor-none pt-32 md:pt-48 pb-20"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         onMouseDown={handleMouseDown}
         onMouseLeave={handleMouseLeave}
@@ -130,25 +168,39 @@ export default function HorizontalProjectsGallery({ onSelectProject }: Horizonta
         {/* Spacer for start */}
         <div className="w-[30vw] shrink-0" />
 
-        {allProjects.map((project, index) => (
-          <ProjectCard 
-            key={`${project.id}-${index}`} 
-            project={project} 
-            containerRef={scrollContainerRef} 
-            onClick={() => {
-              if (!isDragging) onSelectProject(project);
-            }}
-          />
-        ))}
+        {allProjects.length > 0 ? (
+          allProjects.map((project, index) => (
+            <Editable key={`${project.id}-${index}`} section="projects" element="project" projectId={project.id}>
+              <ProjectCard 
+                project={project} 
+                containerRef={scrollContainerRef} 
+                onClick={() => {
+                  if (!isDragging) onSelectProject(project);
+                }}
+              />
+            </Editable>
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center p-12 text-center w-[50vw]">
+            <p className="text-white/30 uppercase tracking-[0.3em] text-[10px] italic">
+              {language === 'es' ? 'No hay proyectos en esta categoría' : 'No projects in this category'}
+            </p>
+          </div>
+        )}
 
         {/* Spacer for end */}
         <div className="w-[30vw] shrink-0" />
       </div>
     </div>
   );
-}
+};
 
-const ProjectCard: React.FC<{ project: Project, containerRef: React.RefObject<HTMLDivElement>, onClick: () => void }> = ({ project, containerRef, onClick }) => {
+// Memoized Card component for GPU accelerated animations and reduced re-renders
+const ProjectCard: React.FC<{ 
+  project: Project, 
+  containerRef: React.RefObject<HTMLDivElement>, 
+  onClick: () => void 
+}> = memo(({ project, containerRef, onClick }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { language } = useLanguage();
   
@@ -159,14 +211,14 @@ const ProjectCard: React.FC<{ project: Project, containerRef: React.RefObject<HT
     offset: ["center end", "center start"]
   });
 
-  // 3D Carousel Effects
+  // 3D Carousel Effects - Optimized for performance
   const rotateY = useTransform(scrollXProgress, [0, 0.5, 1], [45, 0, -45]);
   const scale = useTransform(scrollXProgress, [0, 0.5, 1], [0.8, 1.1, 0.8]);
   const opacity = useTransform(scrollXProgress, [0, 0.5, 1], [0.4, 1, 0.4]);
   const z = useTransform(scrollXProgress, [0, 0.5, 1], [-200, 0, -200]);
 
   return (
-    <div className="snap-center shrink-0 perspective-[1000px]">
+    <div className="snap-center shrink-0 perspective-[1000px] will-change-transform">
       <motion.div 
         ref={ref}
         style={{ 
@@ -184,8 +236,9 @@ const ProjectCard: React.FC<{ project: Project, containerRef: React.RefObject<HT
           <motion.img 
             layoutId={`project-image-${project.id}`}
             src={(project as any).image_url || project.image} 
-            alt={language === 'es' ? project.titleEs : project.title} 
+            alt={language === 'es' ? ((project as any).title_es || project.titleEs) : ((project as any).title_en || project.title)} 
             className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
           />
         </div>
         
@@ -194,13 +247,17 @@ const ProjectCard: React.FC<{ project: Project, containerRef: React.RefObject<HT
           style={{ opacity }}
         >
           <h3 className="text-2xl md:text-3xl font-light uppercase tracking-tight mb-2">
-            {language === 'es' ? project.titleEs : project.title}
+            {language === 'es' ? ((project as any).title_es || project.titleEs) : ((project as any).title_en || project.title)}
           </h3>
           <p className="text-xs uppercase tracking-widest text-gray-500">
-            {language === 'es' ? project.categoryEs : project.category}
+            {language === 'es' ? ((project as any).category_es || project.categoryEs) : ((project as any).category_en || project.category)}
           </p>
         </motion.div>
       </motion.div>
     </div>
   );
-}
+});
+
+ProjectCard.displayName = 'ProjectCard';
+
+export default HorizontalProjectsGallery;

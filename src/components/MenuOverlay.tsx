@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Instagram, ChevronLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import Editable from './Editable';
 
 interface MenuOverlayProps {
   isOpen: boolean;
@@ -79,12 +80,14 @@ export default function MenuOverlay({ isOpen, onClose, onContactClick, onProject
         >
           {/* Header */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-6 md:px-12 z-10">
-            <button 
-              onClick={() => { onClose(); onHomeClick(); }} 
-              className="text-2xl font-bold tracking-tighter uppercase font-sans"
-            >
-              ETC PROYECTO
-            </button>
+            <Editable section="header" element="logo">
+              <button 
+                onClick={() => { onClose(); onHomeClick(); }} 
+                className="text-2xl font-bold tracking-tighter uppercase font-sans"
+              >
+                ETC PROYECTO
+              </button>
+            </Editable>
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleLanguage} 

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
+import { defaultSettings } from '../contexts/SiteContext';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -27,9 +28,23 @@ export default function Dashboard() {
   // Elementor-like Editor State
   const [activeEditor, setActiveEditor] = useState<{ section: string, element: string, projectId?: string | number, memberId?: string | number } | null>(null);
 
+  // Refs for data to be used in event listeners without re-triggering effects
+  const projectsRef = useRef(projects);
+  const teamMembersRef = useRef(teamMembers);
+
+  useEffect(() => {
+    projectsRef.current = projects;
+  }, [projects]);
+
+  useEffect(() => {
+    teamMembersRef.current = teamMembers;
+  }, [teamMembers]);
+
   useEffect(() => {
     fetchData();
+  }, []); // Only fetch on mount
 
+  useEffect(() => {
     // Listen for messages from the iframe
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'ELEMENT_CLICKED') {
@@ -42,7 +57,7 @@ export default function Dashboard() {
         } else if (section === 'projects') {
           setActiveTab('projects');
           if (projectId) {
-            const proj = projects.find(p => String(p.id) === String(projectId));
+            const proj = projectsRef.current.find(p => String(p.id) === String(projectId));
             if (proj) setEditingProject(proj);
           }
         } else if (section === 'contact') {
@@ -50,7 +65,7 @@ export default function Dashboard() {
         } else if (section === 'team') {
           setActiveTab('team');
           if (memberId) {
-            let member = teamMembers.find(m => String(m.id) === String(memberId));
+            let member = teamMembersRef.current.find(m => String(m.id) === String(memberId));
             if (!member) {
               // Check fallbacks if not in DB
               member = fallbackTeamMembers.find(m => String(m.id) === String(memberId));
@@ -65,7 +80,7 @@ export default function Dashboard() {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [projects, teamMembers]);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -76,8 +91,18 @@ export default function Dashboard() {
       ]);
       
       if (setRes.data) {
-        setOriginalSettings(setRes.data);
-        setDraftSettings(setRes.data);
+        // More robust merge to prevent null values from overwriting defaults (like filters)
+        const merged = { ...defaultSettings };
+        Object.keys(setRes.data).forEach(key => {
+          if (setRes.data[key] !== null && setRes.data[key] !== undefined) {
+            (merged as any)[key] = setRes.data[key];
+          }
+        });
+        setOriginalSettings(merged);
+        setDraftSettings(merged);
+      } else {
+        setOriginalSettings(defaultSettings);
+        setDraftSettings(defaultSettings);
       }
       if (projRes.data) {
         setProjects(projRes.data);
@@ -194,8 +219,42 @@ export default function Dashboard() {
     setHasChanges(isSettingsChanged || isProjectEditing || isTeamEditing);
   }, [draftSettings, projects, originalSettings, editingProject, teamMembers, editingMember]);
 
-  const updateSetting = (key: string, value: string) => {
+  const updateSetting = (key: string, value: any) => {
     setDraftSettings((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  const addFilter = () => {
+    // Force a new array reference and ensure it's not empty
+    const currentFilters = Array.isArray(draftSettings.project_filters) ? [...draftSettings.project_filters] : [...defaultSettings.project_filters];
+    
+    // Generate a shorter, cleaner ID
+    const newId = `cat_${Math.random().toString(36).substr(2, 5)}`;
+    const newFilter = { 
+      id: newId, 
+      label_en: 'New Category', 
+      label_es: 'Nueva Categoría' 
+    };
+    
+    const updatedFilters = [...currentFilters, newFilter];
+    
+    // updateSetting uses setDraftSettings which handles state updates correctly
+    updateSetting('project_filters', updatedFilters);
+    
+    toast.success('Filtro añadido', {
+      description: 'Ahora puedes asignar proyectos a esta categoría.'
+    });
+  };
+
+  const removeFilter = (id: string) => {
+    if (id === 'all') return; // Cannot remove 'all'
+    const filters = (draftSettings.project_filters || []).filter((f: any) => f.id !== id);
+    updateSetting('project_filters', filters);
+  };
+
+  const updateFilterEntry = (index: number, field: string, value: string) => {
+    const filters = [...(draftSettings.project_filters || [])];
+    filters[index] = { ...filters[index], [field]: value };
+    updateSetting('project_filters', filters);
   };
 
   const handleSave = async () => {
@@ -354,6 +413,8 @@ export default function Dashboard() {
                 <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400">
                   Editando: {
                     activeEditor.element === 'background' ? 'Media de Fondo' : 
+                    activeEditor.element === 'pretitle' ? 'Pre-título Superior' : 
+                    activeEditor.element === 'filters' ? 'Filtros de Proyectos' : 
                     activeEditor.element === 'member' ? 'Miembro del Equipo' : 
                     activeEditor.element === 'project' ? 'Proyecto' : 
                     activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : 'Título de Sección') :
@@ -380,6 +441,69 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Texto Alt del Logo</label>
                     <input value={draftSettings.logo_alt || ''} onChange={e => updateSetting('logo_alt', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="ETC PROYECTO" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'pretitle' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Pre-título (EN)</label>
+                    <input value={draftSettings.home_pretitle_en || ''} onChange={e => updateSetting('home_pretitle_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Pre-título (ES)</label>
+                    <input value={draftSettings.home_pretitle_es || ''} onChange={e => updateSetting('home_pretitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'filters' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Gestiona las categorías de filtrado de proyectos.</p>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); addFilter(); }}
+                      className="flex items-center gap-1 text-[9px] uppercase tracking-widest bg-blue-500 text-white px-3 py-1.5 rounded-full hover:bg-blue-600 transition-colors"
+                    >
+                      <Plus size={12} /> Añadir Filtro
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {(draftSettings.project_filters || []).map((filter: any, index: number) => (
+                      <div key={filter.id} className="p-4 bg-black/40 border border-white/5 rounded-lg space-y-3 relative group">
+                        {filter.id !== 'all' && (
+                          <button 
+                            onClick={(e) => { e.preventDefault(); removeFilter(filter.id); }}
+                            className="absolute top-2 right-2 text-red-500/50 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Nombre (EN)</label>
+                            <input 
+                              value={filter.label_en || ''} 
+                              onChange={e => updateFilterEntry(index, 'label_en', e.target.value)}
+                              className="w-full bg-black border border-white/10 rounded p-2 text-[10px] outline-none focus:border-white/30" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Nombre (ES)</label>
+                            <input 
+                              value={filter.label_es || ''} 
+                              onChange={e => updateFilterEntry(index, 'label_es', e.target.value)}
+                              className="w-full bg-black border border-white/10 rounded p-2 text-[10px] outline-none focus:border-white/30" 
+                            />
+                          </div>
+                        </div>
+                        <div className="text-[8px] text-zinc-600 uppercase tracking-widest italic">
+                          ID Técnico: {filter.id}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -590,15 +714,34 @@ export default function Dashboard() {
                       <input value={editingProject.category_es || ''} onChange={e=>setEditingProject({...editingProject, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
                     </div>
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Estatus</label>
-                      <select 
-                        value={editingProject.status || 'complete'} 
-                        onChange={e=>setEditingProject({...editingProject, status: e.target.value})}
-                        className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30"
-                      >
-                        <option value="build">Build</option>
-                        <option value="complete">Complete</option>
-                      </select>
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Asignar a Filtros (Multiselect)</label>
+                      <div className="flex flex-wrap gap-2">
+                        {(draftSettings.project_filters || [])
+                          .filter((f: any) => f.id !== 'all')
+                          .map((f: any) => {
+                            const isSelected = (editingProject.status || '').split(',').map((s:string)=>s.trim()).includes(f.id);
+                            return (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => {
+                                  let currentValue = editingProject.status || '';
+                                  let current = currentValue.split(',').map((s:string)=>s.trim()).filter((s:string)=>s !== '');
+                                  if (isSelected) {
+                                    current = current.filter((s:string)=>s !== f.id);
+                                  } else {
+                                    current.push(f.id);
+                                  }
+                                  setEditingProject({...editingProject, status: current.join(',')});
+                                }}
+                                className={`px-3 py-1 rounded-full border text-[9px] uppercase tracking-widest transition-colors ${isSelected ? 'bg-white text-black border-white font-bold' : 'bg-black text-gray-500 border-white/10 hover:border-white/30'}`}
+                              >
+                                {f.label_es}
+                              </button>
+                            );
+                          })
+                        }
+                      </div>
                     </div>
                   </div>
                   
@@ -667,8 +810,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Hide the general tabs content if we are focusing on a specific editor (except for projects/members which uses the main form) */}
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member') && activeTab === 'home' && (
+          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (EN)</label>
@@ -678,6 +820,16 @@ export default function Dashboard() {
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (ES)</label>
                 <input value={draftSettings.home_title_es || ''} onChange={e => updateSetting('home_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
               </div>
+
+              <div className="pt-4 border-t border-white/10">
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Pre-título Superior (EN)</label>
+                <input value={draftSettings.home_pretitle_en || ''} onChange={e => updateSetting('home_pretitle_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Pre-título Superior (ES)</label>
+                <input value={draftSettings.home_pretitle_es || ''} onChange={e => updateSetting('home_pretitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+              </div>
+
               <div className="pt-4 border-t border-white/10">
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (EN)</label>
                 <textarea value={draftSettings.home_subtitle_en || ''} onChange={e => updateSetting('home_subtitle_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-20 resize-none" />
@@ -735,7 +887,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member') && activeTab === 'team' && (
+          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'team' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               {editingMember ? (
                 <form onSubmit={saveMember} className="space-y-4">
@@ -834,7 +986,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member') && activeTab === 'contact' && (
+          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'contact' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Email</label>
@@ -855,8 +1007,48 @@ export default function Dashboard() {
             </div>
           )}
 
-          {activeTab === 'projects' && (
+          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'projects' && (
             <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+              {/* Filter Settings Area */}
+              {!editingProject && (
+                <div className="mb-8 space-y-6 pb-6 border-b border-white/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Configuración de Filtros</h3>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); addFilter(); }}
+                      className="flex items-center gap-1 text-[9px] uppercase tracking-widest bg-blue-500 text-white px-3 py-1.5 rounded-full hover:bg-blue-600 transition-colors"
+                    >
+                      <Plus size={12} /> Añadir Filtro
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(draftSettings.project_filters || []).map((filter: any, index: number) => (
+                      <div key={filter.id} className="p-3 bg-black/40 border border-white/5 rounded-lg space-y-2 relative group">
+                        {filter.id !== 'all' && (
+                          <button 
+                            onClick={(e) => { e.preventDefault(); removeFilter(filter.id); }}
+                            className="absolute top-2 right-2 text-red-500/50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">ES</label>
+                            <input value={filter.label_es || ''} onChange={e => updateFilterEntry(index, 'label_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-[10px] outline-none focus:border-white/30 transition-colors" />
+                          </div>
+                          <div>
+                            <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">EN</label>
+                            <input value={filter.label_en || ''} onChange={e => updateFilterEntry(index, 'label_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-[10px] outline-none focus:border-white/30 transition-colors" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {editingProject ? (
                 <form onSubmit={saveProject} className="space-y-4">
                   <button type="button" onClick={() => setEditingProject(null)} className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-white mb-4 flex items-center gap-1"><X size={12}/> Descartar / Volver</button>
@@ -894,15 +1086,34 @@ export default function Dashboard() {
                     <input value={editingProject.location || ''} onChange={e=>setEditingProject({...editingProject, location: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Estatus</label>
-                    <select 
-                      value={editingProject.status || 'complete'} 
-                      onChange={e=>setEditingProject({...editingProject, status: e.target.value})}
-                      className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30"
-                    >
-                      <option value="build">Build</option>
-                      <option value="complete">Complete</option>
-                    </select>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Asignar a Filtros (Multiselect)</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(draftSettings.project_filters || [])
+                        .filter((f: any) => f.id !== 'all')
+                        .map((f: any) => {
+                          const isSelected = (editingProject.status || '').split(',').map((s:string)=>s.trim()).includes(f.id);
+                          return (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => {
+                                let currentValue = editingProject.status || '';
+                                let current = currentValue.split(',').map((s:string)=>s.trim()).filter((s:string)=>s !== '');
+                                if (isSelected) {
+                                  current = current.filter((s:string)=>s !== f.id);
+                                } else {
+                                  current.push(f.id);
+                                }
+                                setEditingProject({...editingProject, status: current.join(',')});
+                              }}
+                              className={`px-3 py-1 rounded-full border text-[9px] uppercase tracking-widest transition-colors ${isSelected ? 'bg-white text-black border-white font-bold' : 'bg-black text-gray-500 border-white/10 hover:border-white/30'}`}
+                            >
+                              {f.label_es}
+                            </button>
+                          );
+                        })
+                      }
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media del Proyecto (Imagen o Vídeo)</label>
@@ -934,6 +1145,48 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
+                  <div className="pt-4 border-t border-white/10">
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Galería de Imágenes</label>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      {(editingProject.gallery || []).map((img: any, idx: number) => (
+                        <div key={idx} className="relative group aspect-video bg-black border border-white/10 rounded overflow-hidden">
+                          <img src={img.url} className="w-full h-full object-cover" alt="" />
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const newGallery = [...(editingProject.gallery || [])];
+                              newGallery.splice(idx, 1);
+                              setEditingProject({...editingProject, gallery: newGallery});
+                            }}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </div>
+                      ))}
+                      <button 
+                        type="button"
+                        onClick={() => document.getElementById('gallery-upload-input')?.click()}
+                        className="aspect-video border border-dashed border-white/20 rounded flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-white hover:border-white/50 flex-col items-center justify-center gap-1 transition-all"
+                      >
+                        <Plus size={16} />
+                        <span className="text-[8px] uppercase tracking-widest">Añadir Foto</span>
+                      </button>
+                    </div>
+                    <input 
+                      id="gallery-upload-input"
+                      type="file" 
+                      accept="image/*"
+                      onChange={e => handleFileUpload(e, url => {
+                        const newGallery = [...(editingProject.gallery || [])];
+                        newGallery.push({ url, description: '', descriptionEs: '' });
+                        setEditingProject({...editingProject, gallery: newGallery});
+                      })}
+                      disabled={isUploading}
+                      className="hidden" 
+                    />
+                  </div>
+                  
                   <button type="submit" className="w-full bg-white text-black text-[10px] font-bold uppercase tracking-widest py-3 rounded hover:bg-gray-200 mt-4">Guardar Proyecto</button>
                 </form>
               ) : (
@@ -946,8 +1199,14 @@ export default function Dashboard() {
                     {projects.map(p => (
                       <div key={p.id} className="bg-black border border-white/10 rounded p-3 flex items-center justify-between group">
                         <div className="truncate pr-4">
-                          <p className="text-xs font-medium truncate">{p.title_es}</p>
-                          <p className="text-[10px] text-gray-500 truncate">{p.category_es}</p>
+                          <p className="text-xs font-medium truncate">{p.title_es || p.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] text-gray-500 truncate">{p.category_es || p.category}</p>
+                            <span className="w-1 h-1 bg-gray-700 rounded-full"></span>
+                            <p className="text-[10px] text-zinc-400 font-bold tracking-tight uppercase">
+                              {draftSettings.project_filters?.find((f: any) => f.id === p.status)?.label_es || (p.status === 'complete' ? 'Terminado' : p.status === 'build' ? 'En Obra' : 'Sin Estatus')}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setEditingProject(p)} className="p-1.5 bg-white/10 rounded hover:bg-white/20"><Edit2 size={12}/></button>

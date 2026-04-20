@@ -10,11 +10,24 @@ interface SiteContextType {
   isAdminPreview: boolean;
 }
 
-const defaultSettings = {
+export const defaultSettings = { 
   home_title_en: "ETC PROYECTO",
   home_title_es: "ETC PROYECTO",
+  home_pretitle_en: "Caracas Design Studio | Architecture & Interior Design Studio Caracas",
+  home_pretitle_es: "Estudio de Diseño Caracas | Arquitectura e Interiorismo Caracas",
   home_subtitle_en: "Architecture & Design Studio",
   home_subtitle_es: "Estudio de Arquitectura y Diseño",
+  filter_all_en: "All",
+  filter_all_es: "Todos",
+  filter_build_en: "Build",
+  filter_build_es: "En Obra",
+  filter_complete_en: "Complete",
+  filter_complete_es: "Terminados",
+  project_filters: [
+    { id: 'all', label_en: 'All', label_es: 'Todos' },
+    { id: 'build', label_en: 'Build', label_es: 'En Obra' },
+    { id: 'complete', label_en: 'Complete', label_es: 'Terminados' }
+  ],
   contact_email: "info@etcproyecto.com",
   contact_phone: "+58 412 000 0000",
   contact_address: "Caracas, Venezuela",
@@ -59,7 +72,13 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         ]);
         
         if (setRes.data) {
-          setSettings({ ...defaultSettings, ...setRes.data });
+          const merged = { ...defaultSettings };
+          Object.keys(setRes.data).forEach(key => {
+            if (setRes.data[key] !== null && setRes.data[key] !== undefined) {
+              (merged as any)[key] = setRes.data[key];
+            }
+          });
+          setSettings(merged);
         } else {
           console.warn('No site settings found in Supabase, using defaults.');
         }
@@ -107,7 +126,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SiteContext.Provider value={{ settings, projects, loading, isAdminPreview }}>
+    <SiteContext.Provider value={{ settings, projects, teamMembers, loading, isAdminPreview }}>
       {children}
     </SiteContext.Provider>
   );
