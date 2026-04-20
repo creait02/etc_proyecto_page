@@ -10,6 +10,7 @@ export interface Project {
   titleEs: string;
   category: string;
   categoryEs: string;
+  status: 'build' | 'complete';
   image: string;
   description: string;
   descriptionEs: string;
@@ -23,6 +24,7 @@ export const projects: Project[] = [
     titleEs: "Hangar Conviasa",
     category: "Industrial",
     categoryEs: "Industrial",
+    status: "complete",
     image: "https://res.cloudinary.com/debywjrlg/image/upload/v1773322292/1_2_-_Photo_y1qand.jpg",
     description: "A massive industrial hangar designed for aircraft maintenance and storage.",
     descriptionEs: "Un enorme hangar industrial diseñado para el mantenimiento y almacenamiento de aeronaves.",
@@ -40,6 +42,7 @@ export const projects: Project[] = [
     titleEs: "Gimnasio Moderno",
     category: "Commercial",
     categoryEs: "Comercial",
+    status: "build",
     image: "https://res.cloudinary.com/debywjrlg/image/upload/v1773322295/balance-24_zophfl.jpg",
     description: "State-of-the-art fitness facility with premium equipment and dynamic lighting.",
     descriptionEs: "Instalaciones de fitness de última generación con equipamiento premium e iluminación dinámica.",
@@ -57,6 +60,7 @@ export const projects: Project[] = [
     titleEs: "Cocina con Vista a la Montaña",
     category: "Residential",
     categoryEs: "Residencial",
+    status: "complete",
     image: "https://res.cloudinary.com/debywjrlg/image/upload/v1773322298/Copia_de_ABREU-31_lj7akh.jpg",
     description: "A sleek, dark-toned modern kitchen featuring panoramic windows overlooking the lush landscape.",
     descriptionEs: "Una elegante cocina moderna de tonos oscuros con ventanas panorámicas que dan al exuberante paisaje.",
@@ -74,6 +78,7 @@ export const projects: Project[] = [
     titleEs: "Pasillo de Pilares Amarillos",
     category: "Architecture",
     categoryEs: "Arquitectura",
+    status: "build",
     image: "https://res.cloudinary.com/debywjrlg/image/upload/v1773322294/sambilito-14_jeifmb.jpg",
     description: "An striking architectural corridor defined by bold yellow structural pillars and metallic elements.",
     descriptionEs: "Un llamativo pasillo arquitectónico definido por audaces pilares estructurales amarillos y elementos metálicos.",
@@ -91,6 +96,7 @@ export const projects: Project[] = [
     titleEs: "Edificio Forum",
     category: "Commercial",
     categoryEs: "Comercial",
+    status: "complete",
     image: "https://res.cloudinary.com/debywjrlg/image/upload/v1773322298/1._TECHO_EXTERIOR_wn5zwm.png",
     description: "A contemporary commercial complex featuring dynamic facades and integrated public spaces.",
     descriptionEs: "Un complejo comercial contemporáneo que presenta fachadas dinámicas y espacios públicos integrados.",

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users } from 'lucide-react';
+import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
 
@@ -351,7 +351,16 @@ export default function Dashboard() {
           {activeEditor && (
             <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg animate-in fade-in slide-in-from-top-4">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400">Editando: {activeEditor.element}</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                  Editando: {
+                    activeEditor.element === 'background' ? 'Media de Fondo' : 
+                    activeEditor.element === 'member' ? 'Miembro del Equipo' : 
+                    activeEditor.element === 'project' ? 'Proyecto' : 
+                    activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : 'Título de Sección') :
+                    activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : 'Subtítulo de Sección') :
+                    activeEditor.element
+                  }
+                </h3>
                 <button onClick={() => setActiveEditor(null)} className="text-gray-500 hover:text-white"><X size={14} /></button>
               </div>
               
@@ -455,33 +464,58 @@ export default function Dashboard() {
 
               {activeEditor.element === 'background' && (
                 <div className="space-y-4">
-                  <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media de Fondo (Imagen o Vídeo)</label>
-                  <div className="space-y-3">
-                    {draftSettings.home_bg_image && (
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media Actual de Fondo</label>
+                    <div className="space-y-3">
                       <div 
                         onClick={() => document.getElementById('home-bg-upload-input')?.click()}
-                        className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
+                        className="w-full h-48 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
                       >
-                        {draftSettings.home_bg_image.match(/\.(mp4|webm|ogg)$/i) ? (
-                          <video src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
+                        {draftSettings.home_bg_image ? (
+                          <>
+                            {draftSettings.home_bg_image.match(/\.(mp4|webm|ogg)$/i) ? (
+                              <video src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-60" autoPlay muted loop />
+                            ) : (
+                              <img src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Preview" />
+                            )}
+                          </>
                         ) : (
-                          <img src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                          <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center p-6 text-center">
+                            <Video className="w-8 h-8 text-white/20 mb-2" />
+                            <p className="text-[9px] uppercase tracking-widest text-white/40 mb-1">Vídeo por Defecto Activo</p>
+                            <p className="text-[8px] uppercase tracking-widest text-white/20">(YouTube Iframe)</p>
+                          </div>
                         )}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded group-hover:bg-white group-hover:text-black transition-colors">Cambiar Media</span>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[10px] uppercase tracking-widest bg-white text-black px-4 py-2 rounded-full font-bold">Subir Nueva Media</span>
                         </div>
                       </div>
-                    )}
-                    <input 
-                      id="home-bg-upload-input"
-                      type="file" 
-                      accept="image/*,video/*"
-                      onChange={e => handleFileUpload(e, url => updateSetting('home_bg_image', url))}
-                      disabled={isUploading}
-                      className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
-                    />
-                    {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
+                      
+                      <input 
+                        id="home-bg-upload-input"
+                        type="file" 
+                        accept="image/*,video/*"
+                        onChange={e => handleFileUpload(e, url => updateSetting('home_bg_image', url))}
+                        disabled={isUploading}
+                        className="hidden" 
+                      />
+                      
+                      {draftSettings.home_bg_image && (
+                        <button 
+                          onClick={() => updateSetting('home_bg_image', null)}
+                          className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[9px] uppercase tracking-widest rounded transition-colors"
+                        >
+                          Restaurar Vídeo Original
+                        </button>
+                      )}
+                      
+                      {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
+                    </div>
                   </div>
+                  
+                  <p className="text-[9px] text-gray-500 uppercase tracking-widest leading-relaxed border-t border-white/5 pt-4">
+                    Puedes subir imágenes de alta resolución (JPG, PNG) o archivos de vídeo cortos (MP4) para el fondo.
+                  </p>
                 </div>
               )}
 
@@ -554,6 +588,17 @@ export default function Dashboard() {
                     <div>
                       <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Categoría (ES)</label>
                       <input value={editingProject.category_es || ''} onChange={e=>setEditingProject({...editingProject, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Estatus</label>
+                      <select 
+                        value={editingProject.status || 'complete'} 
+                        onChange={e=>setEditingProject({...editingProject, status: e.target.value})}
+                        className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30"
+                      >
+                        <option value="build">Build</option>
+                        <option value="complete">Complete</option>
+                      </select>
                     </div>
                   </div>
                   
@@ -644,25 +689,46 @@ export default function Dashboard() {
               <div className="pt-4 border-t border-white/10">
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media de Fondo (Imagen o Vídeo)</label>
                 <div className="space-y-3">
-                  {draftSettings.home_bg_image && (
-                    <div className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group">
-                      {draftSettings.home_bg_image.match(/\.(mp4|webm|ogg)$/i) ? (
-                        <video src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
-                      ) : (
-                        <img src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" alt="Preview" />
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded">Media Actual</span>
+                  <div 
+                    onClick={() => document.getElementById('home-bg-upload-main')?.click()}
+                    className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
+                  >
+                    {draftSettings.home_bg_image ? (
+                      <>
+                        {draftSettings.home_bg_image.match(/\.(mp4|webm|ogg)$/i) ? (
+                          <video src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
+                        ) : (
+                          <img src={draftSettings.home_bg_image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center p-4 text-center">
+                        <Video className="w-6 h-6 text-white/20 mb-1" />
+                        <p className="text-[8px] uppercase tracking-widest text-white/40">Vídeo por Defecto</p>
                       </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] uppercase tracking-widest bg-white text-black px-3 py-1.5 rounded font-bold">Cambiar Media</span>
                     </div>
-                  )}
+                  </div>
+                  
                   <input 
+                    id="home-bg-upload-main"
                     type="file" 
                     accept="image/*,video/*"
                     onChange={e => handleFileUpload(e, url => updateSetting('home_bg_image', url))}
                     disabled={isUploading}
-                    className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
+                    className="hidden" 
                   />
+                  
+                  {draftSettings.home_bg_image && (
+                    <button 
+                      onClick={() => updateSetting('home_bg_image', null)}
+                      className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[9px] uppercase tracking-widest rounded transition-colors"
+                    >
+                      Restaurar Vídeo Original
+                    </button>
+                  )}
                   {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
                 </div>
               </div>
@@ -826,6 +892,17 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Ubicación</label>
                     <input value={editingProject.location || ''} onChange={e=>setEditingProject({...editingProject, location: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Estatus</label>
+                    <select 
+                      value={editingProject.status || 'complete'} 
+                      onChange={e=>setEditingProject({...editingProject, status: e.target.value})}
+                      className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30"
+                    >
+                      <option value="build">Build</option>
+                      <option value="complete">Complete</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media del Proyecto (Imagen o Vídeo)</label>

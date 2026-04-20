@@ -160,46 +160,31 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
               </div>
             </div>
 
-            {/* SLIDE 2: INFO SECTION (Split Screen) */}
+            {/* SLIDE 2: INFO SECTION (Split Screen - Text Right, Image Left) */}
             <div className="snap-start shrink-0 w-screen h-screen flex flex-col md:flex-row bg-[#0a0a0a] relative overflow-hidden cursor-default">
               <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden">
                 <img 
-                  src={(project as any).image_url || project.image} 
+                  src={project.gallery?.[0]?.url || (project as any).image_url || project.image} 
                   alt={project.title} 
-                  className="w-full h-full object-cover opacity-80"
+                  className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/20" />
               </div>
-              <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-[#0a0a0a]">
-                <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">
-                  {language === 'es' ? 'Concepto de Diseño' : 'Design Concept'}
+              <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-black">
+                <span className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-6 block font-medium">
+                  {language === 'es' ? 'Detalle del Proyecto' : 'Project Detail'}
                 </span>
-                <h2 className="text-4xl md:text-6xl font-light uppercase tracking-tight mb-8 leading-tight">
-                  {language === 'es' ? 'Diseño más allá de los límites' : 'Design beyond boundaries'}
+                <h2 className="text-4xl md:text-7xl font-extralight uppercase tracking-tight mb-8 leading-[1.1]">
+                  {language === 'es' ? 'Excelencia en cada detalle' : 'Excellence in every detail'}
                 </h2>
-                <p className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl">
-                  {language === 'es' ? project.descriptionEs : project.description}
-                  {" "}
-                  {language === 'es' 
-                    ? "Nuestro enfoque integra la funcionalidad con una estética audaz, creando espacios que inspiran y perduran en el tiempo."
-                    : "Our approach integrates functionality with bold aesthetics, creating spaces that inspire and endure over time."}
-                </p>
+                <div className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl">
+                  {project.gallery?.[0] ? (language === 'es' ? project.gallery[0].descriptionEs : project.gallery[0].description) : (language === 'es' ? project.descriptionEs : project.description)}
+                </div>
                 <div className="mt-12 w-24 h-[1px] bg-white/20" />
               </div>
             </div>
 
-            {/* GALLERY SLIDES (Split Screen Style with Animation) */}
-            {project.gallery?.map((img, idx) => (
-              <GallerySlide 
-                key={`${project.id}-gallery-${idx}`}
-                img={img}
-                idx={idx}
-                containerRef={scrollContainerRef}
-                language={language}
-              />
-            ))}
-
-            {/* FINAL SUMMARY GRID SLIDE */}
+            {/* FINAL SUMMARY GRID SLIDE (Galería) */}
             {project.gallery && project.gallery.length > 0 && (
               <SummaryGridSlide project={project} />
             )}
@@ -268,119 +253,4 @@ const SummaryGridSlide: React.FC<{ project: Project }> = ({ project }) => {
   );
 };
 
-const GallerySlide: React.FC<{ 
-  img: ProjectImage, 
-  idx: number, 
-  containerRef: React.RefObject<HTMLDivElement>,
-  language: string
-}> = ({ img, idx, containerRef, language }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  
-  const { scrollXProgress } = useScroll({
-    target: ref,
-    container: containerRef,
-    axis: "x",
-    offset: ["start end", "end start"]
-  });
 
-  // Animation values based on scroll progress
-  const imageScale = useTransform(scrollXProgress, [0, 0.5, 1], [1.2, 1, 1.2]);
-  const textX = useTransform(scrollXProgress, [0, 0.5, 1], [idx % 2 === 0 ? 100 : -100, 0, idx % 2 === 0 ? -100 : 100]);
-  const opacity = useTransform(scrollXProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
-  const brightness = useTransform(scrollXProgress, [0, 0.5, 1], [0.5, 1, 0.5]);
-
-  return (
-    <motion.div 
-      ref={ref}
-      style={{ opacity }}
-      className="snap-start shrink-0 w-screen h-screen flex flex-col md:flex-row bg-[#0a0a0a] relative overflow-hidden cursor-default"
-    >
-      {/* Alternate layout: even index image-left, odd index image-right */}
-      {idx % 2 === 0 ? (
-        <>
-          <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden">
-            <motion.img 
-              src={img.url} 
-              alt={img.description} 
-              style={{ scale: imageScale, filter: useTransform(brightness, b => `brightness(${b})`) }}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/10" />
-          </div>
-          <motion.div 
-            style={{ x: textX }}
-            className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-[#0a0a0a]"
-          >
-            <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">
-              {language === 'es' ? 'Detalle del Proyecto' : 'Project Detail'}
-            </span>
-            <motion.h2 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-3xl md:text-5xl font-light uppercase tracking-tight mb-8 leading-tight"
-            >
-              {language === 'es' ? 'Excelencia en cada detalle' : 'Excellence in every detail'}
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl"
-            >
-              {language === 'es' ? img.descriptionEs : img.description}
-            </motion.p>
-            <motion.div 
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              transition={{ duration: 1, delay: 0.6 }}
-              className="mt-12 w-24 h-[1px] bg-white/20 origin-left" 
-            />
-          </motion.div>
-        </>
-      ) : (
-        <>
-          <motion.div 
-            style={{ x: textX }}
-            className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-8 md:px-20 lg:px-32 bg-[#0a0a0a] order-2 md:order-1"
-          >
-            <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">
-              {language === 'es' ? 'Perspectiva' : 'Perspective'}
-            </span>
-            <motion.h2 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-3xl md:text-5xl font-light uppercase tracking-tight mb-8 leading-tight"
-            >
-              {language === 'es' ? 'Visión Arquitectónica' : 'Architectural Vision'}
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-gray-400 text-sm md:text-lg font-light leading-relaxed max-w-xl"
-            >
-              {language === 'es' ? img.descriptionEs : img.description}
-            </motion.p>
-            <motion.div 
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              transition={{ duration: 1, delay: 0.6 }}
-              className="mt-12 w-24 h-[1px] bg-white/20 origin-left" 
-            />
-          </motion.div>
-          <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden order-1 md:order-2">
-            <motion.img 
-              src={img.url} 
-              alt={img.description} 
-              style={{ scale: imageScale, filter: useTransform(brightness, b => `brightness(${b})`) }}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/10" />
-          </div>
-        </>
-      )}
-    </motion.div>
-  );
-}

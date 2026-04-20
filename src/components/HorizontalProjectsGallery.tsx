@@ -11,6 +11,7 @@ interface HorizontalProjectsGalleryProps {
 export default function HorizontalProjectsGallery({ onSelectProject }: HorizontalProjectsGalleryProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'build' | 'complete'>('all');
   const startX = useRef(0);
   const scrollLeft = useRef(0);
   const { t } = useLanguage();
@@ -19,8 +20,16 @@ export default function HorizontalProjectsGallery({ onSelectProject }: Horizonta
   // Use live projects if available, otherwise fallback to mock data
   const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : projects;
 
+  // Filter projects by status
+  const filteredProjects = filter === 'all' 
+    ? displayProjects 
+    : displayProjects.filter((p: any) => p.status === filter);
+
   // Duplicate projects to create a longer, more immersive carousel
-  const allProjects = [...displayProjects, ...displayProjects, ...displayProjects];
+  // We need at least a few items for the effect to work well
+  const allProjects = filteredProjects.length > 0 
+    ? [...filteredProjects, ...filteredProjects, ...filteredProjects]
+    : [];
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
@@ -59,7 +68,7 @@ export default function HorizontalProjectsGallery({ onSelectProject }: Horizonta
     scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
-  // Map vertical scroll to horizontal scroll
+  // Sync wheel scroll for horizontal movement
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -74,13 +83,44 @@ export default function HorizontalProjectsGallery({ onSelectProject }: Horizonta
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
+
+  // Reset scroll when filter changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }, [filter]);
   
   return (
-    <div className="w-full h-full bg-[#050505] text-white overflow-hidden flex flex-col relative">
+    <div className="w-full h-full bg-[#050505] text-white overflow-hidden flex flex-col relative cursor-none">
+      {/* Filtering UI */}
+      <div className="absolute top-20 md:top-[124px] left-0 w-full z-50 flex justify-center items-center gap-3 md:gap-8 pointer-events-none px-4">
+        {(['all', 'build', 'complete'] as const).map((option) => (
+          <button
+            key={option}
+            onMouseDown={(e) => e.stopPropagation()} // Prevent parent drag from triggering
+            onClick={(e) => {
+              e.stopPropagation();
+              setFilter(option);
+            }}
+            className={`
+              pointer-events-auto
+              px-4 md:px-8 py-2 md:py-2.5 rounded-full border text-[9px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] font-bold transition-all duration-500
+              ${filter === option 
+                ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105 md:scale-110' 
+                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/40 hover:text-white'
+              }
+            `}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+
       {/* Horizontal Scroll Container */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-x-auto flex items-center px-8 md:px-12 gap-4 md:gap-8 snap-x snap-mandatory scrollbar-hide perspective-[1000px] cursor-grab active:cursor-grabbing"
+        className="flex-1 overflow-x-auto flex items-center px-6 md:px-12 gap-8 md:gap-20 snap-x snap-mandatory scrollbar-hide perspective-[1000px] cursor-none pt-32 md:pt-40 pb-20"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         onMouseDown={handleMouseDown}
         onMouseLeave={handleMouseLeave}
