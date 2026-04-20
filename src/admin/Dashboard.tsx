@@ -4,6 +4,7 @@ import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, User
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
 import { defaultSettings } from '../contexts/SiteContext';
+import { projects as fallbackProjects } from '../data/mockData';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -62,12 +63,37 @@ export default function Dashboard() {
             if (proj) {
               setEditingProject(proj);
             } else {
-              // DIRECT FETCH as fallback to avoid null editingProject
-              const loadProject = async () => {
-                const { data } = await supabase.from('projects').select('*').eq('id', projectId).single();
-                if (data) setEditingProject(data);
-              };
-              loadProject();
+              // Check fallbacks first to handle initial mock data clicks seamlessly
+              const fallbackProj = fallbackProjects.find(p => String(p.id) === projIdStr);
+              if (fallbackProj) {
+                // Initialize a mock project exactly as it should look locally and in DB
+                setEditingProject({
+                  ...fallbackProj,
+                  title_en: fallbackProj.title,
+                  title_es: fallbackProj.titleEs,
+                  category_en: fallbackProj.category,
+                  category_es: fallbackProj.categoryEs,
+                  description_en: fallbackProj.description,
+                  description_es: fallbackProj.descriptionEs,
+                  image_url: fallbackProj.image,
+                  // Remove old mock keys so it doesn't cause insert issues
+                  title: undefined,
+                  titleEs: undefined,
+                  category: undefined,
+                  categoryEs: undefined,
+                  description: undefined,
+                  descriptionEs: undefined,
+                  image: undefined,
+                  gallery: undefined
+                });
+              } else {
+                // DIRECT FETCH as absolute fallback to avoid null editingProject
+                const loadProject = async () => {
+                  const { data } = await supabase.from('projects').select('*').eq('id', projectId).single();
+                  if (data) setEditingProject(data);
+                };
+                loadProject();
+              }
             }
           }
         } else if (section === 'contact') {
@@ -422,12 +448,12 @@ export default function Dashboard() {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400">
                   Editando: {
-                    activeEditor.element === 'background' ? 'Media de Fondo' : 
+                    activeEditor.element === 'background' ? 'Fondo Principal' : 
                     activeEditor.element === 'pretitle' ? 'Pre-título Superior' : 
                     activeEditor.element === 'filters' ? 'Filtros de Proyectos' : 
                     activeEditor.element === 'member' ? 'Miembro del Equipo' : 
                     activeEditor.element === 'project' ? 'Proyecto Completo' : 
-                    activeEditor.element === 'image' ? 'Fondo del Proyecto' : 
+                    activeEditor.element === 'image' ? 'Imagen del Proyecto' : 
                     activeEditor.element === 'category' ? 'Categoría' : 
                     activeEditor.element === 'description' ? 'Descripción' : 
                     activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : 'Título del Proyecto') :
@@ -459,33 +485,36 @@ export default function Dashboard() {
               )}
 
               {/* Quick Editor for Project Elements (Integrated) */}
-              {(activeEditor.section === 'projects' || activeEditor.element === 'project') && editingProject && (
-                <div className="space-y-6">
+              {(activeEditor.section === 'projects' || activeEditor.element === 'project' || activeEditor.element === 'image') && editingProject && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <h3 className="text-[10px] uppercase tracking-widest text-white/30 border-b border-white/10 pb-2">Edición: {editingProject.title_es || editingProject.title || 'Proyecto'}</h3>
+                  
                   {/* Show Image Upload if specifically editing image OR as part of project edit */}
                   {(activeEditor.element === 'image' || activeEditor.element === 'project') && (
-                    <div className="animate-in slide-in-from-top-2 duration-300 bg-white/5 p-4 rounded-lg border border-blue-500/30">
-                      <label className="block text-[10px] uppercase tracking-widest text-blue-400 mb-3 font-bold">Imagen de Fondo del Proyecto</label>
+                    <div className="space-y-3">
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Foto de Fondo del Proyecto</label>
                       <div className="space-y-3">
                         <div 
                           onClick={() => document.getElementById('quick-project-upload')?.click()}
-                          className="w-full h-44 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer shadow-2xl"
+                          className="w-full h-48 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer shadow-2xl"
                         >
                           {(editingProject.image_url || editingProject.image) ? (
                             <>
-                              {((editingProject.image_url || editingProject.image)).match(/\.(mp4|webm|ogg)$/i) ? (
+                              {String(editingProject.image_url || editingProject.image).match(/\.(mp4|webm|ogg)$/i) ? (
                                 <video src={editingProject.image_url || editingProject.image} className="w-full h-full object-cover opacity-60" autoPlay muted loop />
                               ) : (
-                                <img src={editingProject.image_url || editingProject.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Preview" />
+                                <img src={editingProject.image_url || editingProject.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
                               )}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-[10px] uppercase tracking-widest bg-black/60 text-white px-4 py-2 rounded group-hover:bg-white group-hover:text-black transition-all font-bold">Cambiar Foto</span>
+                              </div>
                             </>
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-500">
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-2">
                               <Plus size={24} />
+                              <span className="text-[9px] uppercase tracking-widest">Añadir Imagen</span>
                             </div>
                           )}
-                          <div className="absolute inset-0 flex items-center justify-center bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="text-[10px] uppercase tracking-widest bg-blue-500 text-white px-4 py-2 rounded-full font-bold">Subir Imagen / Vídeo</span>
-                          </div>
                         </div>
                         <input 
                           id="quick-project-upload"
@@ -495,15 +524,6 @@ export default function Dashboard() {
                           disabled={isUploading}
                           className="hidden" 
                         />
-                        {!(editingProject.image_url || editingProject.image) && (
-                          <button 
-                            onClick={() => document.getElementById('quick-project-upload')?.click()}
-                            className="w-full py-8 border border-dashed border-white/20 rounded flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-white hover:border-white/40 transition-all"
-                          >
-                            <Plus size={20} />
-                            <span className="text-[10px] uppercase tracking-widest">Subir Media</span>
-                          </button>
-                        )}
                         {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest italic">Subiendo archivo...</p>}
                       </div>
                     </div>
