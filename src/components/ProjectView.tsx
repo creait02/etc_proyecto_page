@@ -3,6 +3,7 @@ import { X, ArrowLeft } from 'lucide-react';
 import { Project, ProjectImage } from '../data/mockData';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Editable } from './Editable';
 
 interface ProjectViewProps {
   project: Project | null;
@@ -118,45 +119,51 @@ export default function ProjectView({ project, onClose }: ProjectViewProps) {
           >
             {/* SLIDE 1: HERO SECTION */}
             <div className="snap-start shrink-0 w-screen h-screen flex flex-col justify-end items-start px-6 pb-20 md:px-16 md:pb-24 lg:px-24 lg:pb-24 relative overflow-hidden cursor-default">
-              <div className="absolute inset-0 z-0">
+              <Editable section="projects" element="image" projectId={project.id} className="absolute inset-0 z-0 w-full h-full">
                 <motion.img
                   layoutId={`project-image-${project.id}`}
                   src={(project as any).image_url || project.image}
                   alt={language === 'es' ? ((project as any).title_es || project.titleEs) : ((project as any).title_en || project.title)}
-                  className="w-full h-full object-cover opacity-60 pointer-events-none"
+                  className="w-full h-full object-cover pointer-events-none"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
-              </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+              </Editable>
 
               <div className="max-w-4xl z-10 pointer-events-none select-none text-left">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex items-center flex-wrap gap-4 mb-4 text-[9px] md:text-[11px] uppercase tracking-[0.2em] text-gray-300 font-medium"
-                >
-                  <span>{language === 'es' ? ((project as any).category_es || project.categoryEs) : ((project as any).category_en || project.category)}</span>
-                  <span className="w-[1px] h-3 bg-gray-400 hidden md:inline-block"></span>
-                  <span className="text-gray-400">{t('project.studio')}</span>
-                </motion.div>
+                <Editable section="projects" element="category" projectId={project.id} className="pointer-events-auto">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center flex-wrap gap-4 mb-4 text-[9px] md:text-[11px] uppercase tracking-[0.2em] text-gray-300 font-medium"
+                  >
+                    <span>{language === 'es' ? ((project as any).category_es || project.categoryEs) : ((project as any).category_en || project.category)}</span>
+                    <span className="w-[1px] h-3 bg-gray-400 hidden md:inline-block"></span>
+                    <span className="text-gray-400">{t('project.studio')}</span>
+                  </motion.div>
+                </Editable>
                 
-                <motion.h1 
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.8 }}
-                  className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase"
-                >
-                  {language === 'es' ? ((project as any).title_es || project.titleEs) : ((project as any).title_en || project.title)}
-                </motion.h1>
+                <Editable section="projects" element="title" projectId={project.id} className="pointer-events-auto">
+                  <motion.h1 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.8 }}
+                    className="text-5xl md:text-[5.5rem] font-extralight leading-[1.1] tracking-tight mb-6 text-white drop-shadow-2xl uppercase"
+                  >
+                    {language === 'es' ? ((project as any).title_es || project.titleEs) : ((project as any).title_en || project.title)}
+                  </motion.h1>
+                </Editable>
                 
-                <motion.p 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light"
-                >
-                  {language === 'es' ? ((project as any).description_es || project.descriptionEs) : ((project as any).description_en || project.description)}
-                </motion.p>
+                <Editable section="projects" element="description" projectId={project.id} className="pointer-events-auto">
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="text-gray-300 max-w-md leading-relaxed drop-shadow-md text-sm md:text-base font-light"
+                  >
+                    {language === 'es' ? ((project as any).description_es || project.descriptionEs) : ((project as any).description_en || project.description)}
+                  </motion.p>
+                </Editable>
               </div>
             </div>
 

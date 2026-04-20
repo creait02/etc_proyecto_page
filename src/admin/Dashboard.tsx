@@ -57,8 +57,18 @@ export default function Dashboard() {
         } else if (section === 'projects') {
           setActiveTab('projects');
           if (projectId) {
-            const proj = projectsRef.current.find(p => String(p.id) === String(projectId));
-            if (proj) setEditingProject(proj);
+            const projIdStr = String(projectId);
+            const proj = projectsRef.current.find(p => String(p.id) === projIdStr);
+            if (proj) {
+              setEditingProject(proj);
+            } else {
+              // DIRECT FETCH as fallback to avoid null editingProject
+              const loadProject = async () => {
+                const { data } = await supabase.from('projects').select('*').eq('id', projectId).single();
+                if (data) setEditingProject(data);
+              };
+              loadProject();
+            }
           }
         } else if (section === 'contact') {
           setActiveTab('contact');
@@ -416,9 +426,12 @@ export default function Dashboard() {
                     activeEditor.element === 'pretitle' ? 'Pre-título Superior' : 
                     activeEditor.element === 'filters' ? 'Filtros de Proyectos' : 
                     activeEditor.element === 'member' ? 'Miembro del Equipo' : 
-                    activeEditor.element === 'project' ? 'Proyecto' : 
-                    activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : 'Título de Sección') :
-                    activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : 'Subtítulo de Sección') :
+                    activeEditor.element === 'project' ? 'Proyecto Completo' : 
+                    activeEditor.element === 'image' ? 'Fondo del Proyecto' : 
+                    activeEditor.element === 'category' ? 'Categoría' : 
+                    activeEditor.element === 'description' ? 'Descripción' : 
+                    activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : 'Título del Proyecto') :
+                    activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : 'Subtítulo del Proyecto') :
                     activeEditor.element
                   }
                 </h3>
@@ -441,6 +454,126 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Texto Alt del Logo</label>
                     <input value={draftSettings.logo_alt || ''} onChange={e => updateSetting('logo_alt', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="ETC PROYECTO" />
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Editor for Project Elements (Integrated) */}
+              {(activeEditor.section === 'projects' || activeEditor.element === 'project') && editingProject && (
+                <div className="space-y-6">
+                  {/* Show Image Upload if specifically editing image OR as part of project edit */}
+                  {(activeEditor.element === 'image' || activeEditor.element === 'project') && (
+                    <div className="animate-in slide-in-from-top-2 duration-300 bg-white/5 p-4 rounded-lg border border-blue-500/30">
+                      <label className="block text-[10px] uppercase tracking-widest text-blue-400 mb-3 font-bold">Imagen de Fondo del Proyecto</label>
+                      <div className="space-y-3">
+                        <div 
+                          onClick={() => document.getElementById('quick-project-upload')?.click()}
+                          className="w-full h-44 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer shadow-2xl"
+                        >
+                          {(editingProject.image_url || editingProject.image) ? (
+                            <>
+                              {((editingProject.image_url || editingProject.image)).match(/\.(mp4|webm|ogg)$/i) ? (
+                                <video src={editingProject.image_url || editingProject.image} className="w-full h-full object-cover opacity-60" autoPlay muted loop />
+                              ) : (
+                                <img src={editingProject.image_url || editingProject.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Preview" />
+                              )}
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-500">
+                              <Plus size={24} />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[10px] uppercase tracking-widest bg-blue-500 text-white px-4 py-2 rounded-full font-bold">Subir Imagen / Vídeo</span>
+                          </div>
+                        </div>
+                        <input 
+                          id="quick-project-upload"
+                          type="file" 
+                          accept="image/*,video/*"
+                          onChange={e => handleFileUpload(e, url => setEditingProject({...editingProject, image_url: url}))}
+                          disabled={isUploading}
+                          className="hidden" 
+                        />
+                        {!(editingProject.image_url || editingProject.image) && (
+                          <button 
+                            onClick={() => document.getElementById('quick-project-upload')?.click()}
+                            className="w-full py-8 border border-dashed border-white/20 rounded flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-white hover:border-white/40 transition-all"
+                          >
+                            <Plus size={20} />
+                            <span className="text-[10px] uppercase tracking-widest">Subir Media</span>
+                          </button>
+                        )}
+                        {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest italic">Subiendo archivo...</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {(activeEditor.element === 'title' || activeEditor.element === 'project') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Título (ES)</label>
+                        <input value={editingProject.title_es || ''} onChange={e=>setEditingProject({...editingProject, title_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                      </div>
+                    )}
+                    {(activeEditor.element === 'category' || activeEditor.element === 'project') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Categoría (ES)</label>
+                        <input value={editingProject.category_es || ''} onChange={e=>setEditingProject({...editingProject, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                      </div>
+                    )}
+                    {(activeEditor.element === 'description' || activeEditor.element === 'project') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Descripción (ES)</label>
+                        <textarea value={editingProject.description_es || ''} onChange={e=>setEditingProject({...editingProject, description_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-24 resize-none" />
+                      </div>
+                    )}
+                    
+                    {activeEditor.element === 'project' && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Asignar a Filtros</label>
+                        <div className="flex flex-wrap gap-2">
+                          {(draftSettings.project_filters || [])
+                            .filter((f: any) => f.id !== 'all')
+                            .map((f: any) => {
+                              const isSelected = (editingProject.status || '').split(',').map((s:string)=>s.trim()).includes(f.id);
+                              return (
+                                <button
+                                  key={f.id}
+                                  type="button"
+                                  onClick={() => {
+                                    let currentValue = editingProject.status || '';
+                                    let current = currentValue.split(',').map((s:string)=>s.trim()).filter((s:string)=>s !== '');
+                                    if (isSelected) {
+                                      current = current.filter((s:string)=>s !== f.id);
+                                    } else {
+                                      current.push(f.id);
+                                    }
+                                    setEditingProject({...editingProject, status: current.join(',')});
+                                  }}
+                                  className={`px-3 py-1 rounded-full border text-[9px] uppercase tracking-widest transition-colors ${isSelected ? 'bg-white text-black border-white font-bold' : 'bg-black text-gray-500 border-white/10 hover:border-white/30'}`}
+                                >
+                                  {f.label_es}
+                                </button>
+                              );
+                            })
+                          }
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
+                    <button 
+                      onClick={() => handleSave()}
+                      disabled={isSaving}
+                      className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded text-[10px] uppercase tracking-widest font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                      {isSaving ? 'Guardando...' : 'Guardar Cambios del Proyecto'}
+                    </button>
+                    <p className="text-[9px] text-gray-500 uppercase tracking-widest leading-relaxed text-center">
+                      Los cambios se verán reflejados al guardar. Puedes editar Detalles Avanzados en la pestaña "Proyectos".
+                    </p>
                   </div>
                 </div>
               )}
@@ -660,97 +793,6 @@ export default function Dashboard() {
                 </div>
               )}
               
-              {/* Quick Editor for Projects */}
-              {activeEditor.element === 'project' && editingProject && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <h3 className="text-[10px] uppercase tracking-widest text-white/30 border-b border-white/10 pb-2">Edición Rápida: {editingProject.title_es || 'Proyecto'}</h3>
-                  
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media del Proyecto</label>
-                    <div className="space-y-3">
-                      {editingProject.image_url && (
-                        <div 
-                          onClick={() => document.getElementById('quick-project-upload')?.click()}
-                          className="w-full h-40 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
-                        >
-                          {editingProject.image_url.match(/\.(mp4|webm|ogg)$/i) ? (
-                            <video src={editingProject.image_url} className="w-full h-full object-cover opacity-50" autoPlay muted loop />
-                          ) : (
-                            <img src={editingProject.image_url} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
-                          )}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded group-hover:bg-white group-hover:text-black transition-colors">Cambiar Media</span>
-                          </div>
-                        </div>
-                      )}
-                      <input 
-                        id="quick-project-upload"
-                        type="file" 
-                        accept="image/*,video/*"
-                        onChange={e => handleFileUpload(e, url => setEditingProject({...editingProject, image_url: url}))}
-                        disabled={isUploading}
-                        className="hidden" 
-                      />
-                      {!editingProject.image_url && (
-                        <button 
-                          onClick={() => document.getElementById('quick-project-upload')?.click()}
-                          className="w-full py-8 border border-dashed border-white/20 rounded flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-white hover:border-white/40 transition-all"
-                        >
-                          <Plus size={20} />
-                          <span className="text-[10px] uppercase tracking-widest">Subir Media</span>
-                        </button>
-                      )}
-                      {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Título (ES)</label>
-                      <input value={editingProject.title_es || ''} onChange={e=>setEditingProject({...editingProject, title_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Categoría (ES)</label>
-                      <input value={editingProject.category_es || ''} onChange={e=>setEditingProject({...editingProject, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Asignar a Filtros (Multiselect)</label>
-                      <div className="flex flex-wrap gap-2">
-                        {(draftSettings.project_filters || [])
-                          .filter((f: any) => f.id !== 'all')
-                          .map((f: any) => {
-                            const isSelected = (editingProject.status || '').split(',').map((s:string)=>s.trim()).includes(f.id);
-                            return (
-                              <button
-                                key={f.id}
-                                type="button"
-                                onClick={() => {
-                                  let currentValue = editingProject.status || '';
-                                  let current = currentValue.split(',').map((s:string)=>s.trim()).filter((s:string)=>s !== '');
-                                  if (isSelected) {
-                                    current = current.filter((s:string)=>s !== f.id);
-                                  } else {
-                                    current.push(f.id);
-                                  }
-                                  setEditingProject({...editingProject, status: current.join(',')});
-                                }}
-                                className={`px-3 py-1 rounded-full border text-[9px] uppercase tracking-widest transition-colors ${isSelected ? 'bg-white text-black border-white font-bold' : 'bg-black text-gray-500 border-white/10 hover:border-white/30'}`}
-                              >
-                                {f.label_es}
-                              </button>
-                            );
-                          })
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-[9px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                    Para editar más detalles como el año, ubicación o descripción completa, usa la pestaña "Proyectos" abajo.
-                  </p>
-                </div>
-              )}
-
               {/* Quick Editor for Team Members */}
               {activeEditor.element === 'member' && editingMember && (
                 <div className="space-y-6 animate-in fade-in duration-300">
@@ -1007,7 +1049,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'projects' && (
+          {activeTab === 'projects' && !activeEditor && (
             <div className="animate-in fade-in slide-in-from-left-4 duration-300">
               {/* Filter Settings Area */}
               {!editingProject && (
