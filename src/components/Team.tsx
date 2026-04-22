@@ -108,14 +108,8 @@ export default function Team() {
             className="w-full h-full flex flex-col md:flex-row"
           >
             {teamMembers.map((member, index) => (
-              <Editable 
-                key={member.id} 
-                section="team" 
-                element="member" 
-                memberId={member.id}
-                className="flex-1 min-h-0"
-              >
                 <motion.div
+                  key={member.id}
                   initial={{ opacity: 0, y: 200 }}
                   animate={{ 
                     opacity: 1, 
@@ -127,31 +121,37 @@ export default function Team() {
                     opacity: { duration: 0.8, delay: index * 0.05 },
                     flex: { duration: 0.35, ease: [0.76, 0, 0.24, 1] } 
                   }}
-                  onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
-                  className="relative group h-full overflow-hidden border-b md:border-b-0 md:border-r border-white/10 last:border-b-0 last:border-r-0 cursor-pointer transition-[flex] duration-350 ease-[0.76,0,0.24,1]"
+                  className="relative group min-h-0 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 last:border-b-0 last:border-r-0 cursor-pointer"
                 >
-                  <img 
-                    src={member.image_url || member.image} 
-                    alt={member.name}
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${expandedMemberId === member.id ? 'grayscale-0 scale-100' : 'grayscale group-hover:grayscale-0 scale-110 group-hover:scale-105'}`}
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${expandedMemberId === member.id ? 'opacity-40' : 'opacity-70 group-hover:opacity-40'}`} />
-                  
-                  {/* Name & Role Container - Visible only when expanded, at the bottom, and smaller */}
-                  <div className={`absolute bottom-10 left-0 right-0 px-6 text-center transition-all duration-700 z-10 ${expandedMemberId === member.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-                    <h3 className="text-lg md:text-2xl font-black uppercase tracking-tighter mb-1 whitespace-nowrap text-white drop-shadow-2xl">
-                      {member.name}
-                    </h3>
-                    <p className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] text-gray-300 font-bold whitespace-nowrap">
-                      {member.role_es || member.role}
-                    </p>
-                  </div>
+                  <Editable 
+                    section="team" 
+                    element="member" 
+                    memberId={member.id}
+                    className="w-full h-full"
+                    onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
+                  >
+                    <img 
+                      src={member.image_url || member.image} 
+                      alt={member.name}
+                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${expandedMemberId === member.id ? 'grayscale-0 scale-100' : 'grayscale group-hover:grayscale-0 scale-110 group-hover:scale-105'}`}
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${expandedMemberId === member.id ? 'opacity-40' : 'opacity-70 group-hover:opacity-40'}`} />
+                    
+                    {/* Name & Role Container - Visible only when expanded, at the bottom, and smaller */}
+                    <div className={`absolute bottom-10 left-0 right-0 px-6 text-center transition-all duration-700 z-10 ${expandedMemberId === member.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                      <h3 className="text-lg md:text-2xl font-black uppercase tracking-tighter mb-1 whitespace-nowrap text-white drop-shadow-2xl">
+                        {member.name}
+                      </h3>
+                      <p className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] text-gray-300 font-bold whitespace-nowrap">
+                        {member.role_es || member.role}
+                      </p>
+                    </div>
 
-                  {/* Aggressive Overlay on Hover/Expand */}
-                  <div className={`absolute inset-0 border-4 border-white/0 transition-all duration-300 ${expandedMemberId === member.id ? 'border-white/20' : 'group-hover:border-white/10'}`} />
+                    {/* Aggressive Overlay on Hover/Expand */}
+                    <div className={`absolute inset-0 border-4 border-white/0 transition-all duration-300 ${expandedMemberId === member.id ? 'border-white/20' : 'group-hover:border-white/10'}`} />
+                  </Editable>
                 </motion.div>
-              </Editable>
             ))}
 
             {/* Hint to scroll back */}

@@ -140,11 +140,15 @@ export default function Dashboard() {
         setOriginalSettings(defaultSettings);
         setDraftSettings(defaultSettings);
       }
-      if (projRes.data) {
+      if (projRes.data && projRes.data.length > 0) {
         setProjects(projRes.data);
+      } else {
+        setProjects(fallbackProjects);
       }
-      if (teamRes.data) {
+      if (teamRes.data && teamRes.data.length > 0) {
         setTeamMembers(teamRes.data);
+      } else {
+        setTeamMembers(fallbackTeamMembers);
       }
     } catch (error) {
       console.error('Error fetching site data in Dashboard:', error);
@@ -312,18 +316,24 @@ export default function Dashboard() {
 
       // Save project if editing
       if (editingProject) {
-        if (!editingProject.title_en || !editingProject.title_es || !editingProject.category_en || !editingProject.category_es || !editingProject.image_url) {
+        if (!editingProject.title_en || !editingProject.title_es || !editingProject.category_en || !editingProject.category_es || !(editingProject.image_url || editingProject.image)) {
           toast.warning('Campos incompletos', {
-            description: 'Por favor completa los campos requeridos del proyecto (Títulos, Categorías, Imagen URL).'
+            description: 'Por favor completa los campos requeridos del proyecto (Títulos en EN/ES, Categorías en EN/ES, Imagen).'
           });
           setIsSaving(false);
           return;
         }
-        if (editingProject.id) {
-          const { error } = await supabase.from('projects').update(editingProject).eq('id', editingProject.id);
+
+        // Remove mock data mappings from the project object
+        const { image, title, titleEs, category, categoryEs, description, descriptionEs, status, gallery, ...projectDataToSave } = editingProject;
+
+        // If 'id' is a string UUID, we update. If it's a number/fallback, we strip it to force insert and prevent UUID cast errors
+        if (projectDataToSave.id && typeof projectDataToSave.id === 'string' && projectDataToSave.id.includes('-')) {
+          const { error } = await supabase.from('projects').update(projectDataToSave).eq('id', projectDataToSave.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from('projects').insert([editingProject]);
+          delete projectDataToSave.id;
+          const { error } = await supabase.from('projects').insert([projectDataToSave]);
           if (error) throw error;
         }
         setEditingProject(null);
@@ -331,18 +341,23 @@ export default function Dashboard() {
 
       // Save team member if editing
       if (editingMember) {
-        if (!editingMember.name || !editingMember.role_es || !editingMember.image_url) {
+        if (!editingMember.name || !editingMember.role_en || !editingMember.role_es || !(editingMember.image_url || editingMember.image)) {
           toast.warning('Campos incompletos', {
-            description: 'Por favor completa los campos requeridos del miembro del equipo (Nombre, Rol ES, Imagen URL).'
+            description: 'Por favor completa los campos requeridos del miembro (Nombre, Rol en EN/ES, Imagen).'
           });
           setIsSaving(false);
           return;
         }
-        if (editingMember.id) {
-          const { error } = await supabase.from('team_members').update(editingMember).eq('id', editingMember.id);
+
+        // Prepare member data, ignore `image` and `role` (legacy frontend fields)
+        const { image, role, ...memberDataToSave } = editingMember;
+
+        if (memberDataToSave.id && typeof memberDataToSave.id === 'string' && memberDataToSave.id.includes('-')) {
+          const { error } = await supabase.from('team_members').update(memberDataToSave).eq('id', memberDataToSave.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from('team_members').insert([editingMember]);
+          delete memberDataToSave.id;
+          const { error } = await supabase.from('team_members').insert([memberDataToSave]);
           if (error) throw error;
         }
         setEditingMember(null);
@@ -390,8 +405,8 @@ export default function Dashboard() {
   };
 
   // Team Handlers
-  const saveMember = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveMember = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     await handleSave();
   };
 
@@ -859,13 +874,17 @@ export default function Dashboard() {
                       <input value={editingMember.name || ''} onChange={e=>setEditingMember({...editingMember, name: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
                     </div>
                     <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Rol (EN)</label>
+                      <input value={editingMember.role_en || ''} onChange={e=>setEditingMember({...editingMember, role_en: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                    </div>
+                    <div>
                       <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Rol (ES)</label>
                       <input value={editingMember.role_es || ''} onChange={e=>setEditingMember({...editingMember, role_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
                     </div>
                   </div>
 
                   <p className="text-[9px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                    Para editar el rol en inglés o el orden de aparición, usa la pestaña "Equipo" abajo.
+                    Para editar el orden de aparición o eliminar al miembro, usa la pestaña "Equipo" abajo.
                   </p>
                 </div>
               )}
@@ -993,6 +1012,15 @@ export default function Dashboard() {
                         disabled={isUploading}
                         className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
                       />
+                      {!(editingMember.image_url || editingMember.image) && (
+                        <button 
+                          onClick={() => document.getElementById('member-upload-input')?.click()}
+                          className="w-full py-8 border border-dashed border-white/20 rounded flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-white hover:border-white/40 transition-all"
+                        >
+                          <Plus size={20} />
+                          <span className="text-[10px] uppercase tracking-widest">Subir Foto</span>
+                        </button>
+                      )}
                       {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo foto...</p>}
                     </div>
                   </div>

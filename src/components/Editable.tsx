@@ -8,19 +8,21 @@ interface EditableProps {
   memberId?: string | number;
   children: React.ReactNode;
   className?: string;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
-export const Editable: React.FC<EditableProps> = ({ section, element, projectId, memberId, children, className = '' }) => {
+export const Editable: React.FC<EditableProps> = ({ section, element, projectId, memberId, children, className = '', onClick }) => {
   const { isAdminPreview } = useSiteData();
 
   const isAbsolute = className.includes('absolute');
   const baseClasses = `${!isAbsolute ? 'relative' : ''} ${className}`;
 
   if (!isAdminPreview) {
-    return <div className={baseClasses}>{children}</div>;
+    return <div className={baseClasses} onClick={onClick}>{children}</div>;
   }
 
   const handleClick = (e: React.MouseEvent) => {
+    if (onClick) onClick(e);
     e.preventDefault();
     e.stopPropagation();
     

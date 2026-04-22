@@ -87,12 +87,14 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
           setProjects(projRes.data);
         } else {
           console.warn('No projects found in Supabase, using mock data.');
+          setProjects(mockProjects);
         }
 
         if (teamRes.data && teamRes.data.length > 0) {
           setTeamMembers(teamRes.data);
         } else {
           console.warn('No team members found in Supabase.');
+          setTeamMembers(fallbackTeamMembers);
         }
       } catch (error: any) {
         if (error.message === 'Failed to fetch') {

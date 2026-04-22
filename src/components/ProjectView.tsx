@@ -177,76 +177,54 @@ function ProjectContent({ project, onClose }: { project: Project; onClose: () =>
           </div>
         </div>
 
-        {/* SLIDE 2: INFO SECTION (Consistent with Slide 1 - Full Screen Image + Overlay) */}
-        <div className="snap-start shrink-0 w-screen h-screen flex flex-col justify-end items-start px-6 pb-20 md:px-16 md:pb-24 lg:px-24 lg:pb-24 relative overflow-hidden cursor-default">
-          <div className="absolute inset-0 z-0">
-            <img 
-              src={project.gallery?.[0]?.url || (project as any).image_url || project.image} 
-              alt={project.title} 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-          </div>
-
-          <div className="max-w-4xl z-10 pointer-events-none select-none text-left">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-6 font-medium"
-            >
-              {language === 'es' ? 'Detalle del Proyecto' : 'Project Detail'}
-            </motion.div>
-            
-            <motion.h2 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ duration: 0.8 }}
-              className="text-4xl md:text-7xl font-extralight uppercase tracking-tight mb-8 leading-[1.1] text-white"
-            >
-              {language === 'es' ? 'Excelencia en cada detalle' : 'Excellence in every detail'}
-            </motion.h2>
-            
-            <motion.div 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: false }}
-              transition={{ delay: 0.2 }}
-              className="text-gray-300 text-sm md:text-lg font-light leading-relaxed max-w-xl"
-            >
-              {project.gallery?.[0] ? (language === 'es' ? (project.gallery[0].descriptionEs || (project.gallery[0] as any).description_es) : (project.gallery[0].description || (project.gallery[0] as any).description_en)) : (language === 'es' ? ((project as any).description_es || project.descriptionEs) : ((project as any).description_en || project.description))}
-            </motion.div>
-          </div>
-        </div>
-
-        {/* SLIDE 3+: INDIVIDUAL GALLERY IMAGES */}
-        {project.gallery && project.gallery.slice(1).map((img, idx) => (
-          <div key={`gallery-full-${idx}`} className="snap-start shrink-0 w-screen h-screen relative overflow-hidden flex items-center justify-center bg-[#0a0a0a] cursor-default">
-            <div className="absolute inset-0 z-0">
-              <img 
-                src={img.url} 
-                alt="" 
-                className="w-full h-full object-cover opacity-80"
-              />
-              <div className="absolute inset-0 bg-black/20" />
-            </div>
-            
-            {/* Optional Caption */}
-            {(language === 'es' ? (img.descriptionEs || (img as any).description_es) : (img.description || (img as any).description_en)) && (
-              <div className="absolute bottom-12 left-12 md:bottom-24 md:left-24 z-10 max-w-xl">
-                <p className="text-white/60 text-xs md:text-sm uppercase tracking-widest font-light bg-black/20 backdrop-blur-sm px-4 py-2 rounded">
-                  {language === 'es' ? (img.descriptionEs || (img as any).description_es) : (img.description || (img as any).description_en)}
-                </p>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* FINAL SUMMARY GRID SLIDE (Galería) */}
+        {/* SLIDE 2: SPLIT SECTION (Media + Text) */}
         {project.gallery && project.gallery.length > 0 && (
-          <SummaryGridSlide project={project} />
+          <div className="snap-start shrink-0 w-screen h-screen flex relative overflow-hidden bg-[#0a0a0a] cursor-default">
+            {/* Left side: Media (Image/Video) - 45% width */}
+            <div className="w-[45%] h-full relative bg-[#e5e5e5] flex items-center justify-center p-12">
+               {/* Background image from gallery 0, or just a clean render of it */}
+               <motion.div 
+                 className="relative w-full h-full"
+                 initial={{ opacity: 0, scale: 0.9 }}
+                 whileInView={{ opacity: 1, scale: 1 }}
+                 viewport={{ once: false }}
+                 transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+               >
+                 {project.gallery[0].url.match(/\.(mp4|webm|ogg)$/i) ? (
+                   <video src={project.gallery[0].url} autoPlay muted loop className="w-full h-full object-contain" />
+                 ) : (
+                   <img src={project.gallery[0].url} alt="" className="w-full h-full object-contain" />
+                 )}
+               </motion.div>
+            </div>
+
+            {/* Right side: Text - 55% width */}
+            <div className="w-[55%] h-full bg-[#111] flex flex-col justify-center px-16 md:px-24">
+              <motion.h2 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: false }}
+                transition={{ duration: 0.8 }}
+                className="text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-light uppercase tracking-tight mb-8 leading-[1.2] text-white max-w-2xl"
+              >
+                {language === 'es' ? 'DESIGN BEYOND BOUNDARIES' : 'DESIGN BEYOND BOUNDARIES'}
+              </motion.h2>
+              
+              <motion.div 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: false }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+                className="text-gray-400 text-xs md:text-sm font-light leading-relaxed max-w-xl"
+              >
+                {language === 'es' ? (project.gallery[0].descriptionEs || (project.gallery[0] as any).description_es || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.') : (project.gallery[0].description || (project.gallery[0] as any).description_en || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.')}
+              </motion.div>
+            </div>
+          </div>
         )}
+
+        {/* SLIDE 3: MOSAIC GRID SLIDE (Galería) */}
+        <SummaryGridSlide project={project} />
       </div>
 
       {/* Progress Bar */}
@@ -270,23 +248,22 @@ const SummaryGridSlide: React.FC<{ project: Project }> = ({ project }) => {
   const images = displayImages.slice(0, 5);
 
   return (
-    <div className="snap-start shrink-0 w-screen h-screen bg-[#050505] flex flex-col p-4 md:p-8 lg:p-12 gap-4 md:gap-4 overflow-hidden">
-      {/* Top Row: 2 Columns - More dominant */}
-      <div className="flex-[1.4] grid grid-cols-2 gap-4 md:gap-4">
+    <div className="snap-start shrink-0 w-screen h-screen bg-[#111] flex flex-col p-4 md:p-8 lg:p-12 gap-4 md:gap-4 overflow-hidden cursor-default">
+      {/* Top Row: 2 Columns - 2/3 and 1/3 split */}
+      <div className="flex-[1.4] grid grid-cols-3 gap-4 md:gap-4">
         {images.slice(0, 2).map((img, idx) => (
           <motion.div 
             key={`summary-top-${idx}`}
-            initial={{ opacity: 0, scale: 1.1, y: 20 }}
+            initial={{ opacity: 0, scale: 1.02, y: 15 }}
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: idx * 0.2 }}
-            className="relative overflow-hidden rounded-sm group"
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: idx * 0.1 }}
+            className={`relative overflow-hidden rounded-sm group will-change-transform ${idx === 0 ? 'col-span-2' : 'col-span-1'}`}
           >
-            <motion.img 
+            <img 
               src={img.url} 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105 will-change-transform" 
               alt="" 
-              whileHover={{ scale: 1.1 }}
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
           </motion.div>
@@ -298,19 +275,18 @@ const SummaryGridSlide: React.FC<{ project: Project }> = ({ project }) => {
         {images.slice(2, 5).map((img, idx) => (
           <motion.div 
             key={`summary-bottom-${idx}`}
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 + idx * 0.15 }}
-            className="relative overflow-hidden rounded-sm group"
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 + idx * 0.1 }}
+            className="relative overflow-hidden rounded-sm group will-change-transform"
           >
-            <motion.img 
+            <img 
               src={img.url} 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105 will-change-transform" 
               alt="" 
-              whileHover={{ scale: 1.1 }}
             />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700 pointer-events-none" />
           </motion.div>
         ))}
       </div>
