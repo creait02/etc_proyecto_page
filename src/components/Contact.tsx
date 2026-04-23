@@ -8,9 +8,14 @@ import Editable from './Editable';
 
 export default function Contact() {
   const formRef = useRef<HTMLFormElement>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { settings } = useSiteData();
   
+  // Settings with fallbacks
+  const subtitle = settings?.[`contact_subtitle_${language}`] !== undefined ? settings[`contact_subtitle_${language}`] : (language === 'es' ? "CONTÁCTANOS" : "GET IN TOUCH");
+  const title = settings?.[`contact_title_${language}`] !== undefined ? settings[`contact_title_${language}`] : (language === 'es' ? "VAMOS A\nCREAR" : "LET'S\nCREATE");
+  const description = settings?.[`contact_description_${language}`] !== undefined ? settings[`contact_description_${language}`] : (language === 'es' ? "Siempre estamos buscando nuevos desafíos y socios interesantes. Además, nos encanta saludar." : "We are always looking for new challenges and interesting partners. Also, we love to say hello.");
+
   // 3D Tilt Logic
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -58,14 +63,19 @@ export default function Contact() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-6">{t('contact.getInTouch')}</h2>
-            <h1 className="text-5xl md:text-7xl font-light uppercase tracking-tight mb-8 leading-none">
-              {t('contact.lets')} <br />
-              <span className="font-bold">{t('contact.create')}</span>
-            </h1>
-            <p className="text-gray-600 font-light leading-relaxed mb-8">
-              {t('contact.description')}
-            </p>
+            <Editable section="contact" element="subtitle">
+              <h2 className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-6">{subtitle}</h2>
+            </Editable>
+            <Editable section="contact" element="title">
+              <h1 className="text-5xl md:text-7xl font-light uppercase tracking-tight mb-8 leading-none whitespace-pre-line">
+                {title}
+              </h1>
+            </Editable>
+            <Editable section="contact" element="description">
+              <p className="text-gray-600 font-light leading-relaxed mb-8 whitespace-pre-line">
+                {description}
+              </p>
+            </Editable>
             
             <Editable section="contact" element="info">
               <div className="space-y-2 text-sm font-mono text-gray-500">

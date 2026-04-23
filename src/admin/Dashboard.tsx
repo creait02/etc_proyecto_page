@@ -327,8 +327,8 @@ export default function Dashboard() {
         // Remove mock data mappings from the project object
         const { image, title, titleEs, category, categoryEs, description, descriptionEs, status, gallery, ...projectDataToSave } = editingProject;
 
-        // If 'id' is a string UUID, we update. If it's a number/fallback, we strip it to force insert and prevent UUID cast errors
-        if (projectDataToSave.id && typeof projectDataToSave.id === 'string' && projectDataToSave.id.includes('-')) {
+        // If 'id' is present, we update. Otherwise insert.
+        if (projectDataToSave.id !== undefined && projectDataToSave.id !== null) {
           const { error } = await supabase.from('projects').update(projectDataToSave).eq('id', projectDataToSave.id);
           if (error) throw error;
         } else {
@@ -352,7 +352,7 @@ export default function Dashboard() {
         // Prepare member data, ignore `image` and `role` (legacy frontend fields)
         const { image, role, ...memberDataToSave } = editingMember;
 
-        if (memberDataToSave.id && typeof memberDataToSave.id === 'string' && memberDataToSave.id.includes('-')) {
+        if (memberDataToSave.id !== undefined && memberDataToSave.id !== null) {
           const { error } = await supabase.from('team_members').update(memberDataToSave).eq('id', memberDataToSave.id);
           if (error) throw error;
         } else {
@@ -399,8 +399,22 @@ export default function Dashboard() {
 
   const deleteProject = async (id: string) => {
     if (confirm('¿Eliminar proyecto?')) {
-      await supabase.from('projects').delete().eq('id', id);
-      fetchData();
+      try {
+        const { error, data } = await supabase.from('projects').delete().eq('id', id).select();
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+           toast.error('No se pudo eliminar', { 
+             description: 'Es posible que las políticas de seguridad (RLS) en Supabase estén bloqueando la acción de "Delete".' 
+           });
+           return;
+        }
+
+        toast.success('Proyecto eliminado');
+        fetchData();
+      } catch (error: any) {
+        toast.error('Error al eliminar', { description: error.message });
+      }
     }
   };
 
@@ -412,8 +426,22 @@ export default function Dashboard() {
 
   const deleteMember = async (id: string) => {
     if (confirm('¿Eliminar miembro del equipo?')) {
-      await supabase.from('team_members').delete().eq('id', id);
-      fetchData();
+      try {
+        const { error, data } = await supabase.from('team_members').delete().eq('id', id).select();
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+           toast.error('No se pudo eliminar', { 
+             description: 'Revisa las políticas RLS de Supabase. La base de datos no permitió borrar el elemento.' 
+           });
+           return;
+        }
+
+        toast.success('Miembro eliminado');
+        fetchData();
+      } catch (error: any) {
+        toast.error('Error al eliminar', { description: error.message });
+      }
     }
   };
 
@@ -1078,21 +1106,57 @@ export default function Dashboard() {
 
           {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'contact' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Email</label>
-                <input value={draftSettings.contact_email || ''} onChange={e => updateSetting('contact_email', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+              
+              <div className="pb-6 border-b border-white/10 space-y-6">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Textos Principales</h3>
+                 <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (EN)</label>
+                    <textarea value={draftSettings.contact_title_en !== undefined ? draftSettings.contact_title_en : defaultSettings.contact_title_en} onChange={e => updateSetting('contact_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-16 resize-none" placeholder="LET'S\nCREATE" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (ES)</label>
+                    <textarea value={draftSettings.contact_title_es !== undefined ? draftSettings.contact_title_es : defaultSettings.contact_title_es} onChange={e => updateSetting('contact_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-16 resize-none" placeholder="VAMOS A\nCREAR" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (EN)</label>
+                    <input value={draftSettings.contact_subtitle_en !== undefined ? draftSettings.contact_subtitle_en : defaultSettings.contact_subtitle_en} onChange={e => updateSetting('contact_subtitle_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="GET IN TOUCH" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (ES)</label>
+                    <input value={draftSettings.contact_subtitle_es !== undefined ? draftSettings.contact_subtitle_es : defaultSettings.contact_subtitle_es} onChange={e => updateSetting('contact_subtitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="CONTÁCTANOS" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (EN)</label>
+                    <textarea value={draftSettings.contact_description_en !== undefined ? draftSettings.contact_description_en : defaultSettings.contact_description_en} onChange={e => updateSetting('contact_description_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (ES)</label>
+                    <textarea value={draftSettings.contact_description_es !== undefined ? draftSettings.contact_description_es : defaultSettings.contact_description_es} onChange={e => updateSetting('contact_description_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
               </div>
+
               <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Teléfono</label>
-                <input value={draftSettings.contact_phone || ''} onChange={e => updateSetting('contact_phone', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Instagram URL</label>
-                <input value={draftSettings.contact_instagram || ''} onChange={e => updateSetting('contact_instagram', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Dirección</label>
-                <textarea value={draftSettings.contact_address || ''} onChange={e => updateSetting('contact_address', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-4">Información de Contacto</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Email</label>
+                    <input value={draftSettings.contact_email || ''} onChange={e => updateSetting('contact_email', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Teléfono</label>
+                    <input value={draftSettings.contact_phone || ''} onChange={e => updateSetting('contact_phone', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Instagram URL</label>
+                    <input value={draftSettings.contact_instagram || ''} onChange={e => updateSetting('contact_instagram', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Dirección</label>
+                    <textarea value={draftSettings.contact_address || ''} onChange={e => updateSetting('contact_address', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
               </div>
             </div>
           )}

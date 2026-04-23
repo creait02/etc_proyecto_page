@@ -39,7 +39,13 @@ export const defaultSettings = {
   team_description_es: "Nuestro equipo reúne a arquitectos, ingenieros y especialistas en construcción líderes en la industria para entregar proyectos complejos a gran escala con una calidad sin concesiones. Cada estructura que creamos refleja un equilibrio entre la excelencia técnica, el diseño refinado y el valor a largo plazo.",
   team_description_en: "Our team brings together industry-leading architects, engineers, and construction specialists to deliver complex, large-scale projects with uncompromising quality. Every structure we create reflects a balance between technical excellence, refined design, and long-term value.",
   team_tags_es: "Ingeniería, Arquitectura, Diseño",
-  team_tags_en: "Engineering, Architecture, Design"
+  team_tags_en: "Engineering, Architecture, Design",
+  contact_title_en: "LET'S\nCREATE",
+  contact_title_es: "VAMOS A\nCREAR",
+  contact_subtitle_en: "GET IN TOUCH",
+  contact_subtitle_es: "CONTÁCTANOS",
+  contact_description_en: "We are always looking for new challenges and interesting partners. Also, we love to say hello.",
+  contact_description_es: "Siempre estamos buscando nuevos desafíos y socios interesantes. Además, nos encanta saludar."
 };
 
 const SiteContext = createContext<SiteContextType>({ 
