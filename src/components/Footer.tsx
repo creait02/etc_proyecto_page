@@ -4,8 +4,18 @@ import { useSiteData } from '../contexts/SiteContext';
 import Editable from './Editable';
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { settings } = useSiteData();
+
+  const footerDescription = settings?.[`footer_description_${language}`] !== undefined 
+    ? settings[`footer_description_${language}`] 
+    : (language === 'es' ? "Estudio galardonado de arquitectura y diseño de interiores con sede en Caracas, creando espacios que inspiran y perduran." : "Award-winning architecture and interior design studio based in Caracas, creating spaces that inspire and endure.");
+    
+  const socialLinks = settings?.social_links || [
+    { id: 'instagram', label: 'Instagram', url: '#' },
+    { id: 'linkedin', label: 'LinkedIn', url: '#' },
+    { id: 'pinterest', label: 'Pinterest', url: '#' }
+  ];
 
   return (
     <footer className="bg-black text-white py-24 px-6 md:px-12 border-t border-white/10">
@@ -14,9 +24,11 @@ export default function Footer() {
           <Editable section="header" element="logo">
             <h3 className="text-2xl font-bold tracking-tighter uppercase mb-8">ETC PROYECTO</h3>
           </Editable>
-          <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
-            {t('footer.description')}
-          </p>
+          <Editable section="contact" element="description">
+            <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
+              {footerDescription}
+            </p>
+          </Editable>
         </div>
 
         <div>
@@ -47,13 +59,13 @@ export default function Footer() {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-gray-500 mb-6">{t('footer.social')}</h4>
           <ul className="space-y-4 text-sm font-light">
-            {settings?.contact_instagram ? (
-              <li><a href={settings.contact_instagram} target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">Instagram</a></li>
-            ) : (
-              <li><a href="#" className="hover:text-gray-300 transition-colors">Instagram</a></li>
-            )}
-            <li><a href="#" className="hover:text-gray-300 transition-colors">LinkedIn</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">Pinterest</a></li>
+            {(socialLinks || []).map((link: any) => (
+              <li key={link.id}>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">
+                  {link.label}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 

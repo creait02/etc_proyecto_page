@@ -45,7 +45,14 @@ export const defaultSettings = {
   contact_subtitle_en: "GET IN TOUCH",
   contact_subtitle_es: "CONTÁCTANOS",
   contact_description_en: "We are always looking for new challenges and interesting partners. Also, we love to say hello.",
-  contact_description_es: "Siempre estamos buscando nuevos desafíos y socios interesantes. Además, nos encanta saludar."
+  contact_description_es: "Siempre estamos buscando nuevos desafíos y socios interesantes. Además, nos encanta saludar.",
+  footer_description_en: "Award-winning architecture and interior design studio based in Caracas, creating spaces that inspire and endure.",
+  footer_description_es: "Estudio galardonado de arquitectura y diseño de interiores con sede en Caracas, creando espacios que inspiran y perduran.",
+  social_links: [
+    { id: 'instagram', label: 'Instagram', url: '#' },
+    { id: 'linkedin', label: 'LinkedIn', url: '#' },
+    { id: 'pinterest', label: 'Pinterest', url: '#' }
+  ]
 };
 
 const SiteContext = createContext<SiteContextType>({ 

@@ -297,6 +297,24 @@ export default function Dashboard() {
     updateSetting('project_filters', filters);
   };
 
+  const addSocialLink = () => {
+    const currentLinks = Array.isArray(draftSettings.social_links) ? [...draftSettings.social_links] : [];
+    const newId = `social_${Math.random().toString(36).substr(2, 5)}`;
+    const updatedLinks = [...currentLinks, { id: newId, label: 'Nueva Red Social', url: 'https://' }];
+    updateSetting('social_links', updatedLinks);
+  };
+
+  const updateSocialLink = (index: number, field: 'label' | 'url', value: string) => {
+    const currentLinks = [...(draftSettings.social_links || [])];
+    currentLinks[index] = { ...currentLinks[index], [field]: value };
+    updateSetting('social_links', currentLinks);
+  };
+
+  const removeSocialLink = (id: string) => {
+    const currentLinks = (draftSettings.social_links || []).filter((l: any) => l.id !== id);
+    updateSetting('social_links', currentLinks);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     
@@ -304,14 +322,31 @@ export default function Dashboard() {
       // Save settings if changed
       const isSettingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(draftSettings);
       if (isSettingsChanged) {
-        if (originalSettings.id) {
-          const { error } = await supabase.from('site_settings').update(draftSettings).eq('id', originalSettings.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('site_settings').insert([draftSettings]);
-          if (error) throw error;
+        try {
+          if (originalSettings.id) {
+            const { error } = await supabase.from('site_settings').update(draftSettings).eq('id', originalSettings.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from('site_settings').insert([draftSettings]);
+            if (error) throw error;
+          }
+          setOriginalSettings(draftSettings);
+        } catch (settingsError: any) {
+          if (settingsError.message?.includes('Could not find') || settingsError.message?.includes('column')) {
+             toast.error('Faltan columnas en Supabase', {
+                description: `Error: ${settingsError.message}. Por favor, verifica el SQL ejecutado.`
+             });
+             console.error("Supabase Settings Error:", settingsError);
+             setIsSaving(false);
+             return;
+          } else {
+             toast.error('Error al guardar ajustes', {
+                description: settingsError.message
+             });
+             console.error("Supabase Settings Error:", settingsError);
+             throw settingsError;
+          }
         }
-        setOriginalSettings(draftSettings);
       }
 
       // Save project if editing
@@ -1156,6 +1191,62 @@ export default function Dashboard() {
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Dirección</label>
                     <textarea value={draftSettings.contact_address || ''} onChange={e => updateSetting('contact_address', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
                   </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/10">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-4">Pie de Página (Footer)</h3>
+                <div className="grid grid-cols-1 gap-4 mb-8">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (EN)</label>
+                    <textarea value={draftSettings.footer_description_en !== undefined ? draftSettings.footer_description_en : defaultSettings.footer_description_en} onChange={e => updateSetting('footer_description_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (ES)</label>
+                    <textarea value={draftSettings.footer_description_es !== undefined ? draftSettings.footer_description_es : defaultSettings.footer_description_es} onChange={e => updateSetting('footer_description_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Redes Sociales</h3>
+                  <button 
+                    onClick={(e) => { e.preventDefault(); addSocialLink(); }}
+                    className="flex items-center gap-1 text-[9px] uppercase tracking-widest bg-blue-500 text-white px-3 py-1.5 rounded-full hover:bg-blue-600 transition-colors"
+                  >
+                    <Plus size={12} /> Añadir Red Social
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {((draftSettings.social_links || [])).map((link: any, index: number) => (
+                    <div key={link.id} className="p-4 bg-black border border-white/10 rounded-lg space-y-3 relative group">
+                      <button 
+                        onClick={(e) => { e.preventDefault(); removeSocialLink(link.id); }}
+                        className="absolute top-3 right-3 text-red-500/50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Plataforma (Ej: Instagram)</label>
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => updateSocialLink(index, 'label', e.target.value)}
+                          className="w-full bg-black/40 border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">URL del Perfil</label>
+                        <input
+                          type="url"
+                          value={link.url}
+                          onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
+                          className="w-full bg-black/40 border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
