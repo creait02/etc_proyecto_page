@@ -42,6 +42,15 @@ export default function Dashboard() {
   }, [teamMembers]);
 
   useEffect(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'CHANGE_VIEW',
+        payload: { view: activeTab }
+      }, '*');
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
     fetchData();
   }, []); // Only fetch on mount
 

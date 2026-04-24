@@ -37,6 +37,20 @@ function MainSite() {
 
   const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : projects;
 
+  // Listen for view changes from the admin dashboard
+  useEffect(() => {
+    const handleAdminMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'CHANGE_VIEW') {
+        const newView = event.data.payload?.view;
+        if (newView && ['home', 'projects', 'contact', 'highlights', 'team'].includes(newView)) {
+          setView(newView as any);
+        }
+      }
+    };
+    window.addEventListener('message', handleAdminMessage);
+    return () => window.removeEventListener('message', handleAdminMessage);
+  }, []);
+
   // Lock body scroll when menu is open or loading
   useEffect(() => {
     if (isMenuOpen || isLoading) {

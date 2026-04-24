@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { projects as mockProjects } from '../data/mockData';
+import { fallbackTeamMembers } from '../constants';
 
 interface SiteContextType {
   settings: any;
