@@ -542,9 +542,9 @@ export default function Dashboard() {
                     activeEditor.element === 'project' ? 'Proyecto Completo' : 
                     activeEditor.element === 'image' ? 'Imagen del Proyecto' : 
                     activeEditor.element === 'category' ? 'Categoría' : 
-                    activeEditor.element === 'description' ? 'Descripción' : 
-                    activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : 'Título del Proyecto') :
-                    activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : 'Subtítulo del Proyecto') :
+                    activeEditor.element === 'description' ? (activeEditor.section === 'contact' ? 'Descripción Contacto' : activeEditor.section === 'team' ? 'Descripción Equipo' : 'Descripción') : 
+                    activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : activeEditor.section === 'contact' ? 'Título Contacto' : activeEditor.section === 'team' ? 'Título Equipo' : 'Título del Proyecto') :
+                    activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : activeEditor.section === 'contact' ? 'Subtítulo Contacto' : activeEditor.section === 'team' ? 'Subtítulo Equipo' : 'Subtítulo del Proyecto') :
                     activeEditor.element
                   }
                 </h3>
@@ -813,7 +813,46 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {activeEditor.element === 'subtitle' && (
+              {activeEditor.element === 'title' && activeEditor.section === 'contact' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Contacto (EN)</label>
+                    <textarea value={draftSettings.contact_title_en !== undefined ? draftSettings.contact_title_en : defaultSettings.contact_title_en} onChange={e => updateSetting('contact_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Contacto (ES)</label>
+                    <textarea value={draftSettings.contact_title_es !== undefined ? draftSettings.contact_title_es : defaultSettings.contact_title_es} onChange={e => updateSetting('contact_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'subtitle' && activeEditor.section === 'contact' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo Contacto (EN)</label>
+                    <input value={draftSettings.contact_subtitle_en !== undefined ? draftSettings.contact_subtitle_en : defaultSettings.contact_subtitle_en} onChange={e => updateSetting('contact_subtitle_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo Contacto (ES)</label>
+                    <input value={draftSettings.contact_subtitle_es !== undefined ? draftSettings.contact_subtitle_es : defaultSettings.contact_subtitle_es} onChange={e => updateSetting('contact_subtitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'description' && activeEditor.section === 'contact' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción Contacto (EN)</label>
+                    <textarea value={draftSettings.contact_description_en !== undefined ? draftSettings.contact_description_en : defaultSettings.contact_description_en} onChange={e => updateSetting('contact_description_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-32 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción Contacto (ES)</label>
+                    <textarea value={draftSettings.contact_description_es !== undefined ? draftSettings.contact_description_es : defaultSettings.contact_description_es} onChange={e => updateSetting('contact_description_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-32 resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'subtitle' && activeEditor.section !== 'team' && activeEditor.section !== 'contact' && (
                 <div className="space-y-4">
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (EN)</label>
