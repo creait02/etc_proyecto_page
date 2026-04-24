@@ -1,0 +1,1 @@
+ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS is_ceo BOOLEAN DEFAULT false;

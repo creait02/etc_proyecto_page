@@ -13,7 +13,17 @@ export default function Team() {
   const [expandedMemberId, setExpandedMemberId] = useState<number | string | null>(null);
   const isScrollingRef = useRef(false);
 
+  const [isInitialView, setIsInitialView] = useState(true);
+
   const teamMembers = liveTeamMembers && liveTeamMembers.length > 0 ? liveTeamMembers : fallbackTeamMembers;
+
+  const hasCeos = teamMembers.some((m: any) => m.is_ceo);
+
+  const handleContainerHover = () => {
+    if (isInitialView) {
+      setIsInitialView(false);
+    }
+  };
 
   // Get live settings or fallback
   const title = language === 'es' ? (settings?.team_title_es || 'Estudio\nTransformación\nConstrucción') : (settings?.team_title_en || 'Studio\nTransformation\nConstruction');
@@ -106,15 +116,27 @@ export default function Team() {
             exit={{ opacity: 0, x: 100 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="w-full h-full flex flex-col md:flex-row"
+            onMouseEnter={handleContainerHover}
+            onTouchStart={handleContainerHover}
           >
-            {teamMembers.map((member, index) => (
+            {teamMembers.map((member: any, index: number) => {
+                const isExpanded = expandedMemberId === member.id;
+                const isInitiallyExpanded = isInitialView && hasCeos && member.is_ceo;
+                const showAsExpanded = isExpanded || isInitiallyExpanded;
+                const showAsCollapsed = (expandedMemberId !== null && !isExpanded) || (isInitialView && hasCeos && !member.is_ceo);
+                
+                let targetFlex = 1;
+                if (showAsExpanded) targetFlex = 2.5;
+                else if (showAsCollapsed) targetFlex = 0.6;
+
+                return (
                 <motion.div
                   key={member.id}
                   initial={{ opacity: 0, y: 200 }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
-                    flex: expandedMemberId === null ? 1 : (expandedMemberId === member.id ? 2.5 : 0.6)
+                    flex: targetFlex
                   }}
                   transition={{ 
                     y: { duration: 0.8, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] },
@@ -128,18 +150,21 @@ export default function Team() {
                     element="member" 
                     memberId={member.id}
                     className="w-full h-full"
-                    onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
+                    onClick={() => {
+                        if (isInitialView) setIsInitialView(false);
+                        setExpandedMemberId(expandedMemberId === member.id ? null : member.id);
+                    }}
                   >
                     <img 
                       src={member.image_url || member.image} 
                       alt={member.name}
-                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${expandedMemberId === member.id ? 'grayscale-0 scale-100' : 'grayscale group-hover:grayscale-0 scale-110 group-hover:scale-105'}`}
+                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${showAsExpanded ? 'grayscale-0 scale-100' : 'grayscale group-hover:grayscale-0 scale-110 group-hover:scale-105'}`}
                       referrerPolicy="no-referrer"
                     />
-                    <div className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${expandedMemberId === member.id ? 'opacity-40' : 'opacity-70 group-hover:opacity-40'}`} />
+                    <div className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${showAsExpanded ? 'opacity-30' : 'opacity-70 group-hover:opacity-40'}`} />
                     
-                    {/* Name & Role Container - Visible only when expanded, at the bottom, and smaller */}
-                    <div className={`absolute bottom-10 left-0 right-0 px-6 text-center transition-all duration-700 z-10 ${expandedMemberId === member.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                    {/* Name & Role Container */}
+                    <div className={`absolute bottom-10 left-0 right-0 px-6 text-center transition-all duration-700 z-10 ${showAsExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
                       <h3 className="text-lg md:text-2xl font-black uppercase tracking-tighter mb-1 whitespace-nowrap text-white drop-shadow-2xl">
                         {member.name}
                       </h3>
@@ -149,10 +174,11 @@ export default function Team() {
                     </div>
 
                     {/* Aggressive Overlay on Hover/Expand */}
-                    <div className={`absolute inset-0 border-4 border-white/0 transition-all duration-300 ${expandedMemberId === member.id ? 'border-white/20' : 'group-hover:border-white/10'}`} />
+                    <div className={`absolute inset-0 border-4 border-white/0 transition-all duration-300 ${showAsExpanded ? 'border-white/20' : 'group-hover:border-white/10'}`} />
                   </Editable>
                 </motion.div>
-            ))}
+                );
+            })}
 
             {/* Hint to scroll back */}
             <div className={`absolute top-24 left-6 md:left-12 z-[60] flex items-center gap-4 text-[9px] uppercase tracking-[0.3em] text-white/50 pointer-events-none transition-opacity duration-500 ${expandedMemberId !== null ? 'opacity-0' : 'opacity-100'}`}>

@@ -985,6 +985,10 @@ export default function Dashboard() {
                   </div>
 
                   <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                       <input type="checkbox" id="is_ceo_quick" checked={editingMember.is_ceo || false} onChange={e => setEditingMember({...editingMember, is_ceo: e.target.checked})} className="rounded bg-black border-white/20 text-blue-500 focus:ring-blue-500" />
+                       <label htmlFor="is_ceo_quick" className="text-[10px] uppercase tracking-widest text-gray-500">¿Es CEO? (Visible por defecto al abrir)</label>
+                    </div>
                     <div>
                       <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Nombre</label>
                       <input value={editingMember.name || ''} onChange={e=>setEditingMember({...editingMember, name: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
@@ -1093,6 +1097,10 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Nombre</label>
                     <input required value={editingMember.name || ''} onChange={e=>setEditingMember({...editingMember, name: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 mb-4">
+                     <input type="checkbox" id="is_ceo_main" checked={editingMember.is_ceo || false} onChange={e => setEditingMember({...editingMember, is_ceo: e.target.checked})} className="rounded bg-black border-white/20 text-blue-500 focus:ring-blue-500" />
+                     <label htmlFor="is_ceo_main" className="text-[10px] uppercase tracking-widest text-gray-500">Es CEO (Visible inicialmente)</label>
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Rol (EN)</label>
