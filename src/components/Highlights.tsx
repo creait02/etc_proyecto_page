@@ -153,19 +153,19 @@ export default function Highlights() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full h-full flex flex-col items-start px-6 md:px-16 lg:px-24 py-12 md:py-16"
+            className="w-full h-full flex flex-col px-6 md:px-12 lg:px-24 pt-8 md:pt-12 pb-6 md:pb-8 overflow-hidden"
           >
             {/* Header */}
-            <div className="mb-10">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight uppercase leading-[0.9] whitespace-pre-line">
+            <div className="mb-6 md:mb-8 w-full max-w-[1300px] mx-auto shrink-0">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight uppercase leading-[1.1] whitespace-pre-line text-white">
                 {language === 'en' ? 'STORIES\nWE BUILD' : 'HISTORIAS\nQUE CONSTRUIMOS'}
               </h1>
             </div>
 
-            {/* Grid Container - Fills remaining space */}
-            <div className="flex-1 w-full min-h-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grid-rows-2 gap-4 h-full">
-                {highlightsData.slice(0, 8).map((item, index) => (
+            {/* Grid Container for viewport fitting */}
+            <div className="w-full max-w-[1300px] mx-auto flex-1 min-h-0">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 w-full h-full auto-rows-[minmax(0,1fr)]">
+                {highlightsData.slice(0, 7).map((item, index) => (
                   <motion.div 
                     key={item.id}
                     layoutId={`card-${item.id}`}
@@ -173,22 +173,22 @@ export default function Highlights() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: item.id * 0.05 }}
                     onClick={() => handleSelect(item, index)}
-                    className="bg-[#151515] rounded-2xl overflow-hidden group hover:bg-[#1a1a1a] transition-colors duration-500 border border-white/5 flex flex-col h-full cursor-pointer"
+                    className="bg-[#151515] w-full h-full rounded-[16px] lg:rounded-[20px] overflow-hidden group hover:border-[#666] transition-colors duration-500 border border-[#333] flex flex-col cursor-pointer shadow-lg"
                   >
-                    <div className="flex-1 overflow-hidden relative">
+                    <div className="flex-1 overflow-hidden relative min-h-[60px]">
                       <motion.img 
                         layoutId={`project-image-${item.id}`}
                         src={(item as any).image_url || item.image} 
                         alt={language === 'en' ? item.name : item.nameEs}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <div className="p-4 shrink-0">
-                      <h3 className="text-lg font-medium mb-1 truncate">
+                    <div className="p-3 sm:p-4 lg:p-5 shrink-0 flex flex-col bg-[#111]">
+                      <h3 className="text-sm sm:text-base lg:text-[17px] font-bold mb-1 lg:mb-1.5 text-white tracking-wide truncate">
                         {language === 'en' ? item.name : item.nameEs}
                       </h3>
-                      <p className="text-gray-500 font-light text-[10px] leading-relaxed line-clamp-1">
+                      <p className="text-[#999] font-normal text-[10px] sm:text-xs lg:text-[13px] leading-snug line-clamp-2">
                         {language === 'en' ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' : 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'}
                       </p>
                     </div>
