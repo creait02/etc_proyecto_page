@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   
   // Elementor-like Editor State
   const [activeEditor, setActiveEditor] = useState<{ section: string, element: string, projectId?: string | number, memberId?: string | number } | null>(null);
@@ -469,23 +470,27 @@ export default function Dashboard() {
   };
 
   const deleteMember = async (id: string) => {
-    if (confirm('¿Eliminar miembro del equipo?')) {
-      try {
-        const { error, data } = await supabase.from('team_members').delete().eq('id', id).select();
-        if (error) throw error;
+    try {
+      const { error, data } = await supabase.from('team_members').delete().eq('id', id).select();
+      if (error) throw error;
 
-        if (!data || data.length === 0) {
-           toast.error('No se pudo eliminar', { 
-             description: 'Revisa las políticas RLS de Supabase. La base de datos no permitió borrar el elemento.' 
-           });
-           return;
-        }
-
-        toast.success('Miembro eliminado');
-        fetchData();
-      } catch (error: any) {
-        toast.error('Error al eliminar', { description: error.message });
+      if (!data || data.length === 0) {
+         toast.error('No se pudo eliminar', { 
+           description: 'Revisa las políticas RLS de Supabase. La base de datos no permitió borrar el elemento.' 
+         });
+         return;
       }
+
+      toast.success('Miembro eliminado');
+      setTeamMembers(teamMembers.filter(m => String(m.id) !== String(id)));
+      if (String(editingMember?.id) === String(id)) setEditingMember(null);
+      if (String(activeEditor?.memberId) === String(id)) setActiveEditor(null);
+      
+      setMemberToDelete(null);
+      fetchData(); // Sync up fully if there are any cascading effects, but updating local state is usually enough
+    } catch (error: any) {
+      toast.error('Error al eliminar', { description: error.message });
+      setMemberToDelete(null);
     }
   };
 
@@ -1166,18 +1171,30 @@ export default function Dashboard() {
                     
                     <div className="space-y-3">
                       {teamMembers.map(m => (
-                        <div key={m.id} className="bg-black border border-white/10 rounded p-3 flex items-center justify-between group">
-                          <div className="flex items-center gap-3 truncate pr-4">
-                            <img src={m.image_url || m.image} className="w-8 h-8 rounded-full object-cover border border-white/10" alt="" />
-                            <div className="truncate">
-                              <p className="text-xs font-medium truncate">{m.name}</p>
-                              <p className="text-[10px] text-gray-500 truncate">{m.role_es || m.role}</p>
+                        <div key={m.id} className="bg-black border border-white/10 rounded p-3 flex flex-col group">
+                          {memberToDelete === m.id ? (
+                            <div className="flex flex-col gap-3">
+                              <p className="text-xs text-center text-red-400 font-bold">¿Seguro que deseas eliminar este miembro?</p>
+                              <div className="flex gap-2 justify-center">
+                                <button onClick={() => setMemberToDelete(null)} className="px-3 py-1.5 text-[10px] uppercase tracking-widest bg-white/10 rounded hover:bg-white/20 transition-colors">Cancelar</button>
+                                <button onClick={() => deleteMember(m.id)} className="px-3 py-1.5 text-[10px] uppercase tracking-widest bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Confirmar</button>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setEditingMember(m)} className="p-1.5 bg-white/10 rounded hover:bg-white/20"><Edit2 size={12}/></button>
-                            <button onClick={() => deleteMember(m.id)} className="p-1.5 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20"><Trash2 size={12}/></button>
-                          </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 truncate pr-4">
+                                <img src={m.image_url || m.image} className="w-8 h-8 rounded-full object-cover border border-white/10" alt="" />
+                                <div className="truncate">
+                                  <p className="text-xs font-medium truncate">{m.name}</p>
+                                  <p className="text-[10px] text-gray-500 truncate">{m.role_es || m.role}</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={() => setEditingMember(m)} className="p-1.5 bg-white/10 rounded hover:bg-white/20"><Edit2 size={12}/></button>
+                                <button onClick={() => setMemberToDelete(m.id)} className="p-1.5 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20"><Trash2 size={12}/></button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
