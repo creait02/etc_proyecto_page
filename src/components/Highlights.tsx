@@ -3,11 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteData } from '../contexts/SiteContext';
 import Editable from './Editable';
-import { HelpCircle, ArrowRight } from 'lucide-react';
+import { HelpCircle, ArrowRight, Plus } from 'lucide-react';
 
 export default function Highlights() {
   const { language } = useLanguage();
-  const { settings, projects: liveProjects } = useSiteData();
+  const { settings, projects: liveProjects, isAdminPreview } = useSiteData();
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -205,6 +205,22 @@ export default function Highlights() {
                     </div>
                   </motion.div>
                 ))}
+
+                {isAdminPreview && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="w-full h-full"
+                  >
+                    <Editable section="projects" element="new_project" className="w-full h-full block">
+                      <div className="bg-[#151515] w-full h-full min-h-[150px] lg:min-h-[200px] rounded-[16px] lg:rounded-[20px] overflow-hidden group hover:bg-[#1a1a1a] transition-all duration-500 border border-dashed border-[#333]/50 hover:border-[#666] flex flex-col items-center justify-center cursor-pointer shadow-lg text-gray-500 hover:text-white">
+                        <Plus size={32} className="mb-3 opacity-50 group-hover:opacity-100 transition-opacity group-hover:scale-110" />
+                        <span className="text-xs uppercase tracking-widest font-bold tracking-[0.2em]">{language === 'en' ? 'Add Highlight' : 'Añadir Highlight'}</span>
+                      </div>
+                    </Editable>
+                  </motion.div>
+                )}
               </div>
             </div>
           </motion.div>

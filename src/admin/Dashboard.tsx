@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video } from 'lucide-react';
+import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
 import { defaultSettings } from '../contexts/SiteContext';
@@ -65,9 +65,11 @@ export default function Dashboard() {
         // Switch to the appropriate tab based on the section
         if (section === 'home' || section === 'header') {
           setActiveTab('home');
-        } else if (section === 'projects') {
+        } else if (section === 'projects' || element === 'new_project') {
           setActiveTab('projects');
-          if (projectId) {
+          if (element === 'new_project') {
+             setEditingProject({});
+          } else if (projectId) {
             const projIdStr = String(projectId);
             const proj = projectsRef.current.find(p => String(p.id) === projIdStr);
             if (proj) {
@@ -529,7 +531,7 @@ export default function Dashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-white/10 bg-black/10 overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/40 [&::-webkit-scrollbar-thumb]:rounded-full pb-[1px]">
+        <div className="flex border-b border-white/10 bg-black/10 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-black/20 [&::-webkit-scrollbar-thumb]:bg-white/30 hover:[&::-webkit-scrollbar-thumb]:bg-white/50 [&::-webkit-scrollbar-thumb]:rounded-full pb-[1px]">
           <button onClick={() => setActiveTab('home')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'home' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Inicio</button>
           <button onClick={() => setActiveTab('projects')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'projects' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><FolderKanban size={12}/> Proyectos</button>
           <button onClick={() => setActiveTab('team')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'team' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Users size={12}/> Equipo</button>
@@ -553,9 +555,13 @@ export default function Dashboard() {
                     activeEditor.element === 'project' ? 'Proyecto Completo' : 
                     activeEditor.element === 'image' ? 'Imagen del Proyecto' : 
                     activeEditor.element === 'category' ? 'Categoría' : 
-                    activeEditor.element === 'description' ? (activeEditor.section === 'contact' ? 'Descripción Contacto' : activeEditor.section === 'team' ? 'Descripción Equipo' : 'Descripción') : 
-                    activeEditor.element === 'title' ? (activeEditor.section === 'home' ? 'Título Principal' : activeEditor.section === 'contact' ? 'Título Contacto' : activeEditor.section === 'team' ? 'Título Equipo' : 'Título del Proyecto') :
+                    activeEditor.element === 'description' ? (activeEditor.section === 'services' ? 'Descripción Servicios' : activeEditor.section === 'contact' ? 'Descripción Contacto' : activeEditor.section === 'team' ? 'Descripción Equipo' : 'Descripción') : 
+                    activeEditor.element === 'title' ? (activeEditor.section === 'services' ? 'Título Servicios' : activeEditor.section === 'home' ? 'Título Principal' : activeEditor.section === 'contact' ? 'Título Contacto' : activeEditor.section === 'team' ? 'Título Equipo' : 'Título del Proyecto') :
                     activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : activeEditor.section === 'contact' ? 'Subtítulo Contacto' : activeEditor.section === 'team' ? 'Subtítulo Equipo' : 'Subtítulo del Proyecto') :
+                    activeEditor.element === 'buttons' ? 'Botones de Servicios' :
+                    activeEditor.element === 'stats' ? 'Estadísticas de Servicios' :
+                    activeEditor.element === 'video' ? 'Video de Servicios' :
+                    activeEditor.element.startsWith('image_') ? 'Imagen de Servicios' :
                     activeEditor.element
                   }
                 </h3>
@@ -860,6 +866,143 @@ export default function Dashboard() {
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción Contacto (ES)</label>
                     <textarea value={draftSettings.contact_description_es !== undefined ? draftSettings.contact_description_es : defaultSettings.contact_description_es} onChange={e => updateSetting('contact_description_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-32 resize-none" />
                   </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'title' && activeEditor.section === 'services' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título (EN)</label>
+                    <textarea value={draftSettings.services_title_en !== undefined ? draftSettings.services_title_en : defaultSettings.services_title_en} onChange={e => updateSetting('services_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-16 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título (ES)</label>
+                    <textarea value={draftSettings.services_title_es !== undefined ? draftSettings.services_title_es : defaultSettings.services_title_es} onChange={e => updateSetting('services_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-16 resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'description' && activeEditor.section === 'services' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (EN)</label>
+                    <textarea value={draftSettings.services_description_en !== undefined ? draftSettings.services_description_en : defaultSettings.services_description_en} onChange={e => updateSetting('services_description_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (ES)</label>
+                    <textarea value={draftSettings.services_description_es !== undefined ? draftSettings.services_description_es : defaultSettings.services_description_es} onChange={e => updateSetting('services_description_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'buttons' && activeEditor.section === 'services' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 1 (EN)</label>
+                    <input value={draftSettings.services_btn1_en !== undefined ? draftSettings.services_btn1_en : defaultSettings.services_btn1_en} onChange={e => updateSetting('services_btn1_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 1 (ES)</label>
+                    <input value={draftSettings.services_btn1_es !== undefined ? draftSettings.services_btn1_es : defaultSettings.services_btn1_es} onChange={e => updateSetting('services_btn1_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 2 (EN)</label>
+                    <input value={draftSettings.services_btn2_en !== undefined ? draftSettings.services_btn2_en : defaultSettings.services_btn2_en} onChange={e => updateSetting('services_btn2_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 2 (ES)</label>
+                    <input value={draftSettings.services_btn2_es !== undefined ? draftSettings.services_btn2_es : defaultSettings.services_btn2_es} onChange={e => updateSetting('services_btn2_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'video' && activeEditor.section === 'services' && (
+                <div className="space-y-4">
+                  <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Video de Servicios</label>
+                  <div 
+                    className="w-full h-48 bg-black border border-white/10 rounded relative overflow-hidden group cursor-pointer"
+                    onClick={() => document.getElementById('services_video_upload_quick')?.click()}
+                  >
+                    {draftSettings.services_video_url ? (
+                        <video 
+                          src={draftSettings.services_video_url} 
+                          className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" 
+                          muted
+                          loop
+                          playsInline
+                          autoPlay
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-2">
+                          <Play size={24} className="opacity-50" />
+                          <span className="text-[10px] uppercase tracking-widest">Sin video</span>
+                        </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] uppercase tracking-widest font-bold bg-black/60 px-3 py-2 rounded">
+                          {isUploading ? 'Subiendo...' : 'Subir desde archivo'}
+                        </span>
+                    </div>
+                  </div>
+                  <input 
+                    id="services_video_upload_quick"
+                    type="file" 
+                    accept="video/*"
+                    onChange={e => handleFileUpload(e, url => updateSetting('services_video_url', url))}
+                    disabled={isUploading}
+                    className="hidden" 
+                  />
+                </div>
+              )}
+
+              {activeEditor.element.startsWith('image_') && activeEditor.section === 'services' && (
+                <div className="space-y-4">
+                  <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Imagen de Servicios ({activeEditor.element})</label>
+                  <div 
+                    className="w-full h-48 bg-black border border-white/10 rounded relative overflow-hidden group cursor-pointer"
+                    onClick={() => document.getElementById(`services_${activeEditor.element}_quick`)?.click()}
+                  >
+                    {draftSettings[`services_${activeEditor.element}`] !== undefined ? (
+                      <img src={draftSettings[`services_${activeEditor.element}`] || defaultSettings[`services_${activeEditor.element}` as keyof typeof defaultSettings] as string} className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
+                    ) : (
+                      <img src={defaultSettings[`services_${activeEditor.element}` as keyof typeof defaultSettings] as string} className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] uppercase tracking-widest font-bold bg-black/60 px-2 py-1 rounded">Cambiar</span>
+                    </div>
+                  </div>
+                  <input 
+                      id={`services_${activeEditor.element}_quick`}
+                      type="file" 
+                      accept="image/*"
+                      onChange={e => handleFileUpload(e, url => updateSetting(`services_${activeEditor.element}`, url))}
+                      disabled={isUploading}
+                      className="hidden" 
+                  />
+                </div>
+              )}
+
+              {activeEditor.element === 'stats' && activeEditor.section === 'services' && (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map(num => (
+                    <div key={num} className="p-3 bg-black/40 border border-white/5 rounded-lg space-y-3">
+                      <h4 className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Estadística {num}</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Valor</label>
+                          <input value={draftSettings[`services_stat${num}_value`] !== undefined ? draftSettings[`services_stat${num}_value`] : defaultSettings[`services_stat${num}_value` as keyof typeof defaultSettings]} onChange={e => updateSetting(`services_stat${num}_value`, e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors" />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Etiq. (EN)</label>
+                          <input value={draftSettings[`services_stat${num}_label_en`] !== undefined ? draftSettings[`services_stat${num}_label_en`] : defaultSettings[`services_stat${num}_label_en` as keyof typeof defaultSettings]} onChange={e => updateSetting(`services_stat${num}_label_en`, e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors" />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Etiq. (ES)</label>
+                          <input value={draftSettings[`services_stat${num}_label_es`] !== undefined ? draftSettings[`services_stat${num}_label_es`] : defaultSettings[`services_stat${num}_label_es` as keyof typeof defaultSettings]} onChange={e => updateSetting(`services_stat${num}_label_es`, e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1344,20 +1487,40 @@ export default function Dashboard() {
 
                 {draftSettings.services_media_type === 'video' ? (
                   <div className="space-y-4 mt-6">
-                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Video MP4 URL</label>
-                     <div className="flex gap-2 relative">
-                        <input value={draftSettings.services_video_url || ''} onChange={e => updateSetting('services_video_url', e.target.value)} className="flex-1 bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="https://..." />
-                        <label className="bg-white/10 hover:bg-white/20 px-4 flex items-center justify-center rounded cursor-pointer transition-colors text-[10px] uppercase tracking-widest">
-                           {isUploading ? '...' : 'Subir'}
-                           <input 
-                             type="file" 
-                             accept="video/*"
-                             onChange={e => handleFileUpload(e, url => updateSetting('services_video_url', url))}
-                             disabled={isUploading}
-                             className="hidden" 
+                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Video</label>
+                     <div 
+                        className="w-full h-48 bg-black border border-white/10 rounded relative overflow-hidden group cursor-pointer mb-4"
+                        onClick={() => document.getElementById('services_video_upload')?.click()}
+                     >
+                        {draftSettings.services_video_url ? (
+                           <video 
+                              src={draftSettings.services_video_url} 
+                              className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" 
+                              muted
+                              loop
+                              playsInline
+                              autoPlay
                            />
-                        </label>
+                        ) : (
+                           <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-2">
+                              <Play size={24} className="opacity-50" />
+                              <span className="text-[10px] uppercase tracking-widest">Sin video</span>
+                           </div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                           <span className="text-[10px] uppercase tracking-widest font-bold bg-black/60 px-3 py-2 rounded">
+                              {isUploading ? 'Subiendo...' : 'Subir desde archivo'}
+                           </span>
+                        </div>
                      </div>
+                     <input 
+                        id="services_video_upload"
+                        type="file" 
+                        accept="video/*"
+                        onChange={e => handleFileUpload(e, url => updateSetting('services_video_url', url))}
+                        disabled={isUploading}
+                        className="hidden" 
+                     />
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4 mt-6">
