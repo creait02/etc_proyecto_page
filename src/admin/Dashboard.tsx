@@ -108,6 +108,10 @@ export default function Dashboard() {
           }
         } else if (section === 'contact') {
           setActiveTab('contact');
+        } else if (section === 'services') {
+          setActiveTab('services');
+        } else if (section === 'highlights') {
+          setActiveTab('highlights');
         } else if (section === 'team') {
           setActiveTab('team');
           if (memberId) {
@@ -1239,12 +1243,152 @@ export default function Dashboard() {
 
           {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'services' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-              <div className="pb-6 border-b border-white/10 mb-6 flex flex-col items-center justify-center py-12 text-center">
-                <Layout size={32} className="text-white/20 mb-4" />
-                <h3 className="text-[12px] uppercase tracking-widest text-white/50 font-bold mb-2">Próximamente: Servicios</h3>
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest">
-                  Esta sección está lista para que agreguemos la funcionalidad de servicios.
-                </p>
+              <div className="pb-6 border-b border-white/10 space-y-6">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Textos de Servicios</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título (EN)</label>
+                    <textarea value={draftSettings.services_title_en !== undefined ? draftSettings.services_title_en : defaultSettings.services_title_en} onChange={e => updateSetting('services_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-16 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título (ES)</label>
+                    <textarea value={draftSettings.services_title_es !== undefined ? draftSettings.services_title_es : defaultSettings.services_title_es} onChange={e => updateSetting('services_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-16 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (EN)</label>
+                    <textarea value={draftSettings.services_description_en !== undefined ? draftSettings.services_description_en : defaultSettings.services_description_en} onChange={e => updateSetting('services_description_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Descripción (ES)</label>
+                    <textarea value={draftSettings.services_description_es !== undefined ? draftSettings.services_description_es : defaultSettings.services_description_es} onChange={e => updateSetting('services_description_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pb-6 border-b border-white/10 space-y-6">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Botones</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 1 (EN)</label>
+                    <input value={draftSettings.services_btn1_en !== undefined ? draftSettings.services_btn1_en : defaultSettings.services_btn1_en} onChange={e => updateSetting('services_btn1_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 1 (ES)</label>
+                    <input value={draftSettings.services_btn1_es !== undefined ? draftSettings.services_btn1_es : defaultSettings.services_btn1_es} onChange={e => updateSetting('services_btn1_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 2 (EN)</label>
+                    <input value={draftSettings.services_btn2_en !== undefined ? draftSettings.services_btn2_en : defaultSettings.services_btn2_en} onChange={e => updateSetting('services_btn2_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Botón 2 (ES)</label>
+                    <input value={draftSettings.services_btn2_es !== undefined ? draftSettings.services_btn2_es : defaultSettings.services_btn2_es} onChange={e => updateSetting('services_btn2_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pb-6 border-b border-white/10 space-y-6">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Estadísticas</h3>
+                
+                {[1, 2, 3, 4].map(num => (
+                  <div key={num} className="p-4 bg-black/40 border border-white/5 rounded-lg space-y-3">
+                    <h4 className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Estadística {num}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Valor</label>
+                        <input value={draftSettings[`services_stat${num}_value`] !== undefined ? draftSettings[`services_stat${num}_value`] : defaultSettings[`services_stat${num}_value` as keyof typeof defaultSettings]} onChange={e => updateSetting(`services_stat${num}_value`, e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Etiqueta (EN)</label>
+                        <input value={draftSettings[`services_stat${num}_label_en`] !== undefined ? draftSettings[`services_stat${num}_label_en`] : defaultSettings[`services_stat${num}_label_en` as keyof typeof defaultSettings]} onChange={e => updateSetting(`services_stat${num}_label_en`, e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="block text-[8px] uppercase tracking-widest text-gray-500 mb-1">Etiqueta (ES)</label>
+                        <input value={draftSettings[`services_stat${num}_label_es`] !== undefined ? draftSettings[`services_stat${num}_label_es`] : defaultSettings[`services_stat${num}_label_es` as keyof typeof defaultSettings]} onChange={e => updateSetting(`services_stat${num}_label_es`, e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pb-6 border-b border-white/10 space-y-6">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Media (Imágenes o Video)</h3>
+                
+                <div className="space-y-4">
+                  <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Tipo de Visualización</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="media_type" 
+                        value="collage" 
+                        checked={draftSettings.services_media_type !== 'video'} 
+                        onChange={() => updateSetting('services_media_type', 'collage')}
+                        className="accent-blue-500"
+                      />
+                      <span className="text-[10px] uppercase tracking-widest text-white/70">Collage Imágenes</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="media_type" 
+                        value="video" 
+                        checked={draftSettings.services_media_type === 'video'} 
+                        onChange={() => updateSetting('services_media_type', 'video')}
+                        className="accent-blue-500"
+                      />
+                      <span className="text-[10px] uppercase tracking-widest text-white/70">Video</span>
+                    </label>
+                  </div>
+                </div>
+
+                {draftSettings.services_media_type === 'video' ? (
+                  <div className="space-y-4 mt-6">
+                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Video MP4 URL</label>
+                     <div className="flex gap-2 relative">
+                        <input value={draftSettings.services_video_url || ''} onChange={e => updateSetting('services_video_url', e.target.value)} className="flex-1 bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="https://..." />
+                        <label className="bg-white/10 hover:bg-white/20 px-4 flex items-center justify-center rounded cursor-pointer transition-colors text-[10px] uppercase tracking-widest">
+                           {isUploading ? '...' : 'Subir'}
+                           <input 
+                             type="file" 
+                             accept="video/*"
+                             onChange={e => handleFileUpload(e, url => updateSetting('services_video_url', url))}
+                             disabled={isUploading}
+                             className="hidden" 
+                           />
+                        </label>
+                     </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    {[1, 2, 3, 4].map(num => (
+                      <div key={num} className="space-y-2">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Imagen {num}</label>
+                        <div 
+                          className="w-full h-24 bg-black border border-white/10 rounded relative overflow-hidden group cursor-pointer"
+                          onClick={() => document.getElementById(`services_img_${num}`)?.click()}
+                        >
+                          {draftSettings[`services_image_${num}`] !== undefined ? (
+                            <img src={draftSettings[`services_image_${num}`] || defaultSettings[`services_image_${num}` as keyof typeof defaultSettings]} className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
+                          ) : (
+                            <img src={defaultSettings[`services_image_${num}` as keyof typeof defaultSettings] as string} className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[10px] uppercase tracking-widest font-bold bg-black/60 px-2 py-1 rounded">Cambiar</span>
+                          </div>
+                        </div>
+                        <input 
+                           id={`services_img_${num}`}
+                           type="file" 
+                           accept="image/*"
+                           onChange={e => handleFileUpload(e, url => updateSetting(`services_image_${num}`, url))}
+                           disabled={isUploading}
+                           className="hidden" 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

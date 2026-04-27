@@ -55,7 +55,33 @@ export const defaultSettings = {
     { id: 'instagram', label: 'Instagram', url: '#' },
     { id: 'linkedin', label: 'LinkedIn', url: '#' },
     { id: 'pinterest', label: 'Pinterest', url: '#' }
-  ]
+  ],
+  services_title_es: "Construcción precisa.\nResultado duradero.",
+  services_title_en: "Precise construction.\nEnduring result.",
+  services_description_es: "Convertimos diseño en materia. Ejecutamos cada proyecto con control, detalle y una visión clara: construir bien, construir para durar.",
+  services_description_en: "We turn design into matter. We execute every project with control, detail and a clear vision: build well, build to last.",
+  services_btn1_es: "Contáctanos",
+  services_btn1_en: "Contact Us",
+  services_btn2_es: "Ver proyectos",
+  services_btn2_en: "View Projects",
+  services_stat1_value: "+50.000",
+  services_stat1_label_es: "M² CONSTRUIDOS",
+  services_stat1_label_en: "M² BUILT",
+  services_stat2_value: "+120",
+  services_stat2_label_es: "PROYECTOS",
+  services_stat2_label_en: "PROJECTS",
+  services_stat3_value: "+10",
+  services_stat3_label_es: "AÑOS",
+  services_stat3_label_en: "YEARS",
+  services_stat4_value: "100%",
+  services_stat4_label_es: "CALIDAD",
+  services_stat4_label_en: "QUALITY",
+  services_media_type: "collage",
+  services_video_url: "",
+  services_image_1: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=800",
+  services_image_2: "https://images.unsplash.com/photo-1541888086205-08107cd9d5da?auto=format&fit=crop&q=80&w=800",
+  services_image_3: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800",
+  services_image_4: "https://images.unsplash.com/photo-1590644365607-1c5a39227520?auto=format&fit=crop&q=80&w=800"
 };
 
 const SiteContext = createContext<SiteContextType>({ 
