@@ -7,6 +7,7 @@ interface SiteContextType {
   settings: any;
   projects: any[];
   teamMembers: any[];
+  highlights: any[];
   loading: boolean;
   isAdminPreview: boolean;
 }
@@ -88,6 +89,7 @@ const SiteContext = createContext<SiteContextType>({
   settings: defaultSettings, 
   projects: mockProjects, 
   teamMembers: [], 
+  highlights: [],
   loading: true, 
   isAdminPreview: false 
 });
@@ -96,6 +98,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const [settings, setSettings] = useState<any>(defaultSettings);
   const [projects, setProjects] = useState<any[]>(mockProjects);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [highlights, setHighlights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdminPreview, setIsAdminPreview] = useState(false);
 
@@ -107,10 +110,11 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     // 1. Fetch initial data from Supabase
     const fetchData = async () => {
       try {
-        const [setRes, projRes, teamRes] = await Promise.all([
+        const [setRes, projRes, teamRes, highRes] = await Promise.all([
           supabase.from('site_settings').select('*').single(),
           supabase.from('projects').select('*').order('created_at', { ascending: false }),
-          supabase.from('team_members').select('*').order('order', { ascending: true })
+          supabase.from('team_members').select('*').order('order', { ascending: true }),
+          supabase.from('highlights').select('*').order('order', { ascending: true })
         ]);
         
         if (setRes.data) {
@@ -138,6 +142,12 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
           console.warn('No team members found in Supabase.');
           setTeamMembers(fallbackTeamMembers);
         }
+
+        if (highRes.data && highRes.data.length > 0) {
+          setHighlights(highRes.data);
+        } else {
+          setHighlights([]);
+        }
       } catch (error: any) {
         if (error.message === 'Failed to fetch') {
           console.warn('Error de conexión con Supabase (Failed to fetch). Usando datos de respaldo.');
@@ -160,6 +170,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         if (event.data.payload.projects) {
           setProjects(event.data.payload.projects);
         }
+        if (event.data.payload.highlights) {
+          setHighlights(event.data.payload.highlights);
+        }
         if (event.data.payload.teamMembers) {
           setTeamMembers(event.data.payload.teamMembers);
         }
@@ -170,7 +183,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SiteContext.Provider value={{ settings, projects, teamMembers, loading, isAdminPreview }}>
+    <SiteContext.Provider value={{ settings, projects, teamMembers, highlights, loading, isAdminPreview }}>
       {children}
     </SiteContext.Provider>
   );

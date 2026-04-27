@@ -18,6 +18,10 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<any[]>([]);
   const [editingProject, setEditingProject] = useState<any>(null);
 
+  // Highlights State
+  const [highlights, setHighlights] = useState<any[]>([]);
+  const [editingHighlight, setEditingHighlight] = useState<any>(null);
+
   // Team State
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -108,6 +112,23 @@ export default function Dashboard() {
               }
             }
           }
+        } else if (section === 'highlights' || element === 'new_highlight') {
+          setActiveTab('highlights');
+          if (element === 'new_highlight') {
+            setEditingHighlight({});
+          } else if (projectId) {
+            const highlightIdStr = String(projectId);
+            const hig = highlights.find(h => String(h.id) === highlightIdStr);
+            if (hig) {
+              setEditingHighlight(hig);
+            } else {
+              const loadHighlight = async () => {
+                const { data } = await supabase.from('highlights').select('*').eq('id', projectId).single();
+                if (data) setEditingHighlight(data);
+              };
+              loadHighlight();
+            }
+          }
         } else if (section === 'contact') {
           setActiveTab('contact');
         } else if (section === 'services') {
@@ -136,10 +157,11 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [setRes, projRes, teamRes] = await Promise.all([
+      const [setRes, projRes, teamRes, highRes] = await Promise.all([
         supabase.from('site_settings').select('*').single(),
         supabase.from('projects').select('*').order('created_at', { ascending: false }),
-        supabase.from('team_members').select('*').order('order', { ascending: true })
+        supabase.from('team_members').select('*').order('order', { ascending: true }),
+        supabase.from('highlights').select('*').order('order', { ascending: true })
       ]);
       
       if (setRes.data) {
@@ -165,6 +187,10 @@ export default function Dashboard() {
         setTeamMembers(teamRes.data);
       } else {
         setTeamMembers(fallbackTeamMembers);
+      }
+
+      if (highRes.data) {
+        setHighlights(highRes.data);
       }
     } catch (error) {
       console.error('Error fetching site data in Dashboard:', error);
@@ -257,13 +283,23 @@ export default function Dashboard() {
       }
     }
 
+    let previewHighlights = [...highlights];
+    if (editingHighlight) {
+      if (editingHighlight.id) {
+        previewHighlights = previewHighlights.map(h => h.id === editingHighlight.id ? editingHighlight : h);
+      } else {
+        previewHighlights = [...previewHighlights, editingHighlight];
+      }
+    }
+
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({
         type: 'PREVIEW_UPDATE',
         payload: { 
           settings: draftSettings, 
           projects: previewProjects,
-          teamMembers: previewTeam
+          teamMembers: previewTeam,
+          highlights: previewHighlights
         }
       }, '*');
     }
@@ -272,8 +308,9 @@ export default function Dashboard() {
     const isSettingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(draftSettings);
     const isProjectEditing = editingProject !== null;
     const isTeamEditing = editingMember !== null;
-    setHasChanges(isSettingsChanged || isProjectEditing || isTeamEditing);
-  }, [draftSettings, projects, originalSettings, editingProject, teamMembers, editingMember]);
+    const isHighlightEditing = editingHighlight !== null;
+    setHasChanges(isSettingsChanged || isProjectEditing || isTeamEditing || isHighlightEditing);
+  }, [draftSettings, projects, originalSettings, editingProject, teamMembers, editingMember, highlights, editingHighlight]);
 
   const updateSetting = (key: string, value: any) => {
     setDraftSettings((prev: any) => ({ ...prev, [key]: value }));
@@ -414,6 +451,29 @@ export default function Dashboard() {
         setEditingMember(null);
       }
 
+      // Save highlight if editing
+      if (editingHighlight) {
+        if (!editingHighlight.title_en || !editingHighlight.title_es || !editingHighlight.category_en || !editingHighlight.category_es || !(editingHighlight.image_url || editingHighlight.image)) {
+          toast.warning('Campos incompletos', {
+            description: 'Por favor completa los campos requeridos del highlight (Títulos en EN/ES, Categorías en EN/ES, Imagen).'
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        const { image, title, titleEs, category, categoryEs, description, descriptionEs, ...highlightDataToSave } = editingHighlight;
+
+        if (highlightDataToSave.id !== undefined && highlightDataToSave.id !== null) {
+          const { error } = await supabase.from('highlights').update(highlightDataToSave).eq('id', highlightDataToSave.id);
+          if (error) throw error;
+        } else {
+          delete highlightDataToSave.id;
+          const { error } = await supabase.from('highlights').insert([highlightDataToSave]);
+          if (error) throw error;
+        }
+        setEditingHighlight(null);
+      }
+
       await fetchData(); // Refresh all data
       setHasChanges(false);
       toast.success('Cambios guardados', {
@@ -444,6 +504,11 @@ export default function Dashboard() {
 
   // Project Handlers (Direct save for simplicity in this view)
   const saveProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSave();
+  };
+
+  const saveHighlight = async (e: React.FormEvent) => {
     e.preventDefault();
     await handleSave();
   };
@@ -1160,7 +1225,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'home' && (
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Principal (EN)</label>
@@ -1237,7 +1302,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'team' && (
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'team' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               {editingMember ? (
                 <form onSubmit={saveMember} className="space-y-4">
@@ -1361,7 +1426,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'highlights' && (
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'highlights' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div className="pb-6 border-b border-white/10 mb-6">
                 <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-4">Textos Principales</h3>
@@ -1377,14 +1442,117 @@ export default function Dashboard() {
                 </div>
                 <div className="mt-8">
                   <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                    Los proyectos mostrados aquí se administran desde la pestaña "Proyectos".
+                    Los proyectos mostrados en el carrusel de Highlights se administran a continuación independientemente.
                   </p>
                 </div>
               </div>
+
+              {editingHighlight ? (
+                <form onSubmit={saveHighlight} className="space-y-4">
+                  <button type="button" onClick={() => setEditingHighlight(null)} className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-white mb-4 flex items-center gap-1"><X size={12}/> Descartar / Volver</button>
+                  
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Título (EN)</label>
+                    <input required value={editingHighlight.title_en || editingHighlight.title || ''} onChange={e=>setEditingHighlight({...editingHighlight, title_en: e.target.value, title: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Título (ES)</label>
+                    <input required value={editingHighlight.title_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, title_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Categoría (EN)</label>
+                    <input required value={editingHighlight.category_en || editingHighlight.category || ''} onChange={e=>setEditingHighlight({...editingHighlight, category_en: e.target.value, category: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Categoría (ES)</label>
+                    <input required value={editingHighlight.category_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Descripción (EN)</label>
+                    <textarea value={editingHighlight.description_en || editingHighlight.description || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_en: e.target.value, description: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-20 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Descripción (ES)</label>
+                    <textarea value={editingHighlight.description_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-20 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Media del Highlight (Imagen)</label>
+                    <div className="space-y-3">
+                      {(editingHighlight.image_url || editingHighlight.image) && (
+                        <div 
+                          onClick={() => document.getElementById('highlight-upload-input')?.click()}
+                          className="w-full h-32 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
+                        >
+                          <img src={editingHighlight.image_url || editingHighlight.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] uppercase tracking-widest bg-black/50 px-2 py-1 rounded group-hover:bg-white group-hover:text-black transition-colors">Cambiar Imagen</span>
+                          </div>
+                        </div>
+                      )}
+                      <input 
+                        id="highlight-upload-input"
+                        type="file" 
+                        accept="image/*"
+                        onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, image_url: url, image: url}))}
+                        disabled={isUploading}
+                        className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer disabled:opacity-50" 
+                      />
+                      {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest">Subiendo archivo...</p>}
+                    </div>
+                  </div>
+
+                  <button type="submit" className="w-full bg-white text-black text-[10px] font-bold uppercase tracking-widest py-3 rounded hover:bg-gray-200 mt-4">Guardar Highlight</button>
+                </form>
+              ) : (
+                <div>
+                  <button onClick={() => setEditingHighlight({})} className="w-full border border-dashed border-white/20 rounded-lg p-4 text-xs text-gray-400 hover:text-white hover:border-white/50 flex flex-col items-center justify-center gap-2 transition-colors mb-6">
+                    <Plus size={16} /> Nuevo Highlight
+                  </button>
+                  
+                  <div className="space-y-3">
+                    {highlights.map(h => (
+                      <div key={h.id} className="bg-black border border-white/10 rounded p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between group gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-[#111] rounded overflow-hidden shrink-0">
+                            {h.image_url || h.image ? (
+                              <img src={h.image_url || h.image} alt={h.title_es || h.title} className="w-full h-full object-cover grayscale" />
+                            ) : (
+                               <div className="w-full h-full flex items-center justify-center"><Layout size={14} className="text-gray-500" /></div>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white mb-0.5">{h.title_es || h.title}</h4>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest">{h.category_es || h.category}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <button onClick={() => setEditingHighlight(h)} className="flex-1 sm:flex-none px-3 py-1.5 text-[10px] uppercase tracking-widest bg-white/5 hover:bg-white/10 rounded transition-colors text-white">Editar</button>
+                          <button 
+                            onClick={async () => {
+                              if (confirm('¿Estás seguro de que deseas eliminar este highlight?')) {
+                                try {
+                                  await supabase.from('highlights').delete().eq('id', h.id);
+                                  await fetchData();
+                                  toast.success('Highlight eliminado');
+                                } catch (e) {
+                                  toast.error('Error al eliminar');
+                                }
+                              }
+                            }}
+                            className="p-1.5 text-red-500/50 hover:text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'services' && (
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'services' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               <div className="pb-6 border-b border-white/10 space-y-6">
                 <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Textos de Servicios</h3>
@@ -1556,7 +1724,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'contact' && (
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'contact' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
               
               <div className="pb-6 border-b border-white/10 space-y-6">

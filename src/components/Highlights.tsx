@@ -7,7 +7,7 @@ import { HelpCircle, ArrowRight, Plus } from 'lucide-react';
 
 export default function Highlights() {
   const { language } = useLanguage();
-  const { settings, projects: liveProjects, isAdminPreview } = useSiteData();
+  const { settings, highlights: liveHighlights, isAdminPreview } = useSiteData();
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -16,18 +16,18 @@ export default function Highlights() {
   const [scrollTop, setScrollTop] = useState(0);
   const isScrollingRef = useRef(false);
 
-  const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : [];
+  const displayHighlights = liveHighlights && liveHighlights.length > 0 ? liveHighlights : [];
   
-  const highlightsData = displayProjects.map((project: any, index: number) => ({
-    id: project.id || index + 1,
-    name: project.title,
-    nameEs: project.title_es || project.title,
-    role: project.category,
-    roleEs: project.category_es || project.category,
-    image: project.image_url || project.image,
-    description: project.description,
-    descriptionEs: project.description_es || project.description,
-    projectRef: project
+  const highlightsData = displayHighlights.map((highlight: any, index: number) => ({
+    id: highlight.id || index + 1,
+    name: highlight.title_en || highlight.title || 'LOREM IPSUM TITLE',
+    nameEs: highlight.title_es || highlight.title || 'LOREM IPSUM TITLE',
+    role: highlight.category_en || highlight.category || 'LOREM IPSUM ROLE',
+    roleEs: highlight.category_es || highlight.category || 'LOREM IPSUM ROLE',
+    image: highlight.image_url || highlight.image || '',
+    description: highlight.description_en || highlight.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    descriptionEs: highlight.description_es || highlight.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    projectRef: highlight
   }));
 
   const mainTitleEn = settings?.highlights_title_en || 'STORIES\nWE BUILD';
@@ -177,33 +177,44 @@ export default function Highlights() {
             <div className="w-full max-w-7xl mx-auto flex-1 min-h-0">
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 w-full h-full auto-rows-[minmax(0,1fr)]">
                 {highlightsData.slice(0, 7).map((item, index) => (
-                  <motion.div 
-                    key={item.id}
-                    layoutId={`card-${item.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: item.id * 0.05 }}
-                    onClick={() => handleSelect(item, index)}
-                    className="bg-[#151515] w-full h-full rounded-[16px] lg:rounded-[20px] overflow-hidden group hover:border-[#666] transition-colors duration-500 border border-[#333] flex flex-col cursor-pointer shadow-lg"
-                  >
-                    <div className="flex-1 overflow-hidden relative min-h-[60px]">
-                      <motion.img 
-                        layoutId={`project-image-${item.id}`}
-                        src={(item as any).image_url || item.image} 
-                        alt={language === 'en' ? item.name : item.nameEs}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="p-3 sm:p-4 lg:p-5 shrink-0 flex flex-col bg-[#111]">
-                      <h3 className="text-sm sm:text-base lg:text-[17px] font-bold mb-1 lg:mb-1.5 text-white tracking-wide truncate">
-                        {language === 'en' ? item.name : item.nameEs}
-                      </h3>
-                      <p className="text-[#999] font-normal text-[10px] sm:text-xs lg:text-[13px] leading-snug line-clamp-2">
-                        {language === 'en' ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' : 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'}
-                      </p>
-                    </div>
-                  </motion.div>
+                  <Editable key={item.id} section="highlights" element="highlight" projectId={item.id} className="w-full h-full block">
+                    <motion.div 
+                      layoutId={`card-${item.id}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: item.id * 0.05 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleSelect(item, index);
+                      }}
+                      className="bg-[#151515] w-full h-full rounded-[16px] lg:rounded-[20px] overflow-hidden group hover:border-[#666] transition-colors duration-500 border border-[#333] flex flex-col cursor-pointer shadow-lg"
+                    >
+                      <div className="flex-1 overflow-hidden relative min-h-[60px]">
+                        {item.image ? (
+                          <motion.img 
+                            layoutId={`project-image-${item.id}`}
+                            src={item.image} 
+                            alt={language === 'en' ? item.name : item.nameEs}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 w-full h-full bg-[#111] group-hover:bg-[#1a1a1a] transition-colors duration-700 flex items-center justify-center border-b border-[#333]">
+                            <span className="text-[10px] text-[#666] tracking-widest uppercase">Requiere Imagen</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 sm:p-4 lg:p-5 shrink-0 flex flex-col bg-[#111]">
+                        <h3 className="text-sm sm:text-base lg:text-[17px] font-bold mb-1 lg:mb-1.5 text-white tracking-wide truncate">
+                          {language === 'en' ? item.name : item.nameEs}
+                        </h3>
+                        <p className="text-[#999] font-normal text-[10px] sm:text-xs lg:text-[13px] leading-snug line-clamp-2">
+                          {language === 'en' ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' : 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  </Editable>
                 ))}
 
                 {isAdminPreview && (
@@ -213,7 +224,7 @@ export default function Highlights() {
                     transition={{ duration: 0.5, delay: 0.4 }}
                     className="w-full h-full"
                   >
-                    <Editable section="projects" element="new_project" className="w-full h-full block">
+                    <Editable section="highlights" element="new_highlight" className="w-full h-full block">
                       <div className="bg-[#151515] w-full h-full min-h-[150px] lg:min-h-[200px] rounded-[16px] lg:rounded-[20px] overflow-hidden group hover:bg-[#1a1a1a] transition-all duration-500 border border-dashed border-[#333]/50 hover:border-[#666] flex flex-col items-center justify-center cursor-pointer shadow-lg text-gray-500 hover:text-white">
                         <Plus size={32} className="mb-3 opacity-50 group-hover:opacity-100 transition-opacity group-hover:scale-110" />
                         <span className="text-xs uppercase tracking-widest font-bold tracking-[0.2em]">{language === 'en' ? 'Add Highlight' : 'Añadir Highlight'}</span>
@@ -252,13 +263,19 @@ export default function Highlights() {
 
             {/* Left Side: Main Visual */}
             <div className="w-full md:w-[45%] h-[30vh] md:h-full relative overflow-hidden group shrink-0">
-              <motion.img 
-                layoutId={`project-image-${selectedItem.id}`}
-                src={(selectedItem as any).image_url || selectedItem.image} 
-                className="w-full h-full object-cover"
-                alt={selectedItem.name}
-                referrerPolicy="no-referrer"
-              />
+              {selectedItem.image ? (
+                <motion.img 
+                  layoutId={`project-image-${selectedItem.id}`}
+                  src={selectedItem.image} 
+                  className="w-full h-full object-cover"
+                  alt={selectedItem.name}
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#111] flex items-center justify-center">
+                  <span className="text-xs text-[#666] tracking-widest uppercase">Requiere Imagen</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-black/20" />
               {/* Play Button Overlay */}
               <div className="absolute inset-0 flex items-center justify-center">

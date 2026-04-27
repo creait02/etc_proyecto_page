@@ -129,6 +129,41 @@ ON public.team_members FOR UPDATE USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Users can delete team members." 
 ON public.team_members FOR DELETE USING (auth.uid() IS NOT NULL);
 
+-- Create highlights table
+CREATE TABLE IF NOT EXISTS public.highlights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT,
+    title_es TEXT,
+    category TEXT,
+    category_es TEXT,
+    description TEXT,
+    description_es TEXT,
+    image_url TEXT,
+    image TEXT,
+    "order" INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Protect highlights
+ALTER TABLE public.highlights ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public highlights are viewable by everyone." ON public.highlights;
+CREATE POLICY "Public highlights are viewable by everyone." 
+ON public.highlights FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can insert highlights." ON public.highlights;
+CREATE POLICY "Users can insert highlights." 
+ON public.highlights FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Users can update highlights." ON public.highlights;
+CREATE POLICY "Users can update highlights." 
+ON public.highlights FOR UPDATE USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Users can delete highlights." ON public.highlights;
+CREATE POLICY "Users can delete highlights." 
+ON public.highlights FOR DELETE USING (auth.uid() IS NOT NULL);
+
 -- Migration to add new columns to existing table
 ALTER TABLE public.site_settings
 ADD COLUMN IF NOT EXISTS home_bg_image TEXT,
