@@ -263,22 +263,24 @@ export default function Highlights() {
 
             {/* Left Side: Main Visual */}
             <div className="w-full md:w-[45%] h-[30vh] md:h-full relative overflow-hidden group shrink-0">
-              {selectedItem.image ? (
-                <motion.img 
-                  layoutId={`project-image-${selectedItem.id}`}
-                  src={selectedItem.image} 
-                  className="w-full h-full object-cover"
-                  alt={selectedItem.name}
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#111] flex items-center justify-center">
-                  <span className="text-xs text-[#666] tracking-widest uppercase">Requiere Imagen</span>
-                </div>
-              )}
+              <Editable section="highlights" element="image" projectId={selectedItem.id} className="w-full h-full block">
+                {selectedItem.image ? (
+                  <motion.img 
+                    layoutId={`project-image-${selectedItem.id}`}
+                    src={selectedItem.image} 
+                    className="w-full h-full object-cover"
+                    alt={selectedItem.name}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#111] flex items-center justify-center">
+                    <span className="text-xs text-[#666] tracking-widest uppercase">Requiere Imagen</span>
+                  </div>
+                )}
+              </Editable>
               <div className="absolute inset-0 bg-black/20" />
               {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-500">
                   <div className="w-0 h-0 border-t-[6px] md:border-t-[8px] border-t-transparent border-l-[12px] md:border-l-[14px] border-l-white border-b-[6px] md:border-b-[8px] border-b-transparent ml-1" />
                 </div>
@@ -290,15 +292,19 @@ export default function Highlights() {
               <div className="max-w-2xl flex flex-col h-full pt-10 md:pt-0">
                 {/* Category Tag */}
                 <div className="mb-4 md:mb-6">
-                  <span className="px-4 py-1.5 bg-gray-800/50 rounded-full text-[9px] md:text-[10px] uppercase tracking-widest text-gray-300 border border-white/5">
-                    {language === 'en' ? selectedItem.role : selectedItem.roleEs}
-                  </span>
+                  <Editable section="highlights" element="category" projectId={selectedItem.id}>
+                    <span className="px-4 py-1.5 bg-gray-800/50 rounded-full text-[9px] md:text-[10px] uppercase tracking-widest text-gray-300 border border-white/5">
+                      {language === 'en' ? selectedItem.role : selectedItem.roleEs}
+                    </span>
+                  </Editable>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 md:mb-6 tracking-tight leading-tight">
-                  {language === 'en' ? selectedItem.name : selectedItem.nameEs}
-                </h2>
+                <Editable section="highlights" element="title" projectId={selectedItem.id}>
+                  <h2 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 md:mb-6 tracking-tight leading-tight">
+                    {language === 'en' ? selectedItem.name : selectedItem.nameEs}
+                  </h2>
+                </Editable>
 
                 {/* Subtitle */}
                 <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-3 md:mb-4 font-medium">
@@ -318,9 +324,11 @@ export default function Highlights() {
                   data-lenis-prevent
                   className="flex-1 space-y-4 md:space-y-6 text-gray-400 font-light leading-relaxed text-xs md:text-sm overflow-y-auto scrollbar-hide pr-2 mb-6 select-none touch-pan-y"
                 >
-                  <p>
-                    {language === 'en' ? selectedItem.description : selectedItem.descriptionEs}
-                  </p>
+                  <Editable section="highlights" element="description" projectId={selectedItem.id}>
+                    <p>
+                      {language === 'en' ? selectedItem.description : selectedItem.descriptionEs}
+                    </p>
+                  </Editable>
                   <p>
                     {language === 'en' 
                       ? "Our architects, engineers, and construction professionals work as a single, integrated unit. This cohesion allows us to translate ambitious concepts into built realities, ensuring that every decision — from structural systems to material selection — is aligned with the project's broader vision and long-term durability."

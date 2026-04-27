@@ -767,6 +767,80 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Quick Editor for Highlight Elements (Integrated) */}
+              {(activeEditor.section === 'highlights' || activeEditor.element === 'highlight') && editingHighlight && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <h3 className="text-[10px] uppercase tracking-widest text-white/30 border-b border-white/10 pb-2">Edición: {editingHighlight.title_es || editingHighlight.title || 'Highlight'}</h3>
+                  
+                  {/* Image Edit */}
+                  {(activeEditor.element === 'image' || activeEditor.element === 'highlight') && (
+                    <div className="space-y-3">
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Imagen del Highlight</label>
+                      <div className="space-y-3">
+                        <div 
+                          onClick={() => document.getElementById('quick-highlight-upload')?.click()}
+                          className="w-full h-48 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer shadow-2xl"
+                        >
+                          {(editingHighlight.image_url || editingHighlight.image) ? (
+                            <>
+                              <img src={editingHighlight.image_url || editingHighlight.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-[10px] uppercase tracking-widest bg-black/60 text-white px-4 py-2 rounded group-hover:bg-white group-hover:text-black transition-all font-bold">Cambiar Imagen</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 border border-dashed border-white/10">
+                              <Plus size={24} className="mb-2" />
+                              <span className="text-[10px] uppercase tracking-widest">Subir Imagen</span>
+                            </div>
+                          )}
+                        </div>
+                        <input 
+                          id="quick-highlight-upload"
+                          type="file" 
+                          accept="image/*"
+                          onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, image_url: url, image: url}))}
+                          disabled={isUploading}
+                          className="hidden" 
+                        />
+                        {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest italic">Subiendo archivo...</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {(activeEditor.element === 'title' || activeEditor.element === 'highlight') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Título (ES)</label>
+                        <input value={editingHighlight.title_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, title_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                      </div>
+                    )}
+                    {(activeEditor.element === 'category' || activeEditor.element === 'highlight') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Categoría (ES)</label>
+                        <input value={editingHighlight.category_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                      </div>
+                    )}
+                    {(activeEditor.element === 'description' || activeEditor.element === 'highlight') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Descripción (ES)</label>
+                        <textarea value={editingHighlight.description_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-24 resize-none" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
+                    <button 
+                      onClick={() => handleSave()}
+                      disabled={isSaving}
+                      className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded text-[10px] uppercase tracking-widest font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                      {isSaving ? 'Guardando...' : 'Guardar Cambios del Highlight'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {activeEditor.element === 'pretitle' && (
                 <div className="space-y-4">
                   <div>
