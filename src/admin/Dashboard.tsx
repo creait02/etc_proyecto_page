@@ -525,11 +525,13 @@ export default function Dashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-white/10 bg-black/10 overflow-x-auto scrollbar-hide">
-          <button onClick={() => setActiveTab('home')} className={`flex-1 min-w-[70px] py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'home' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Inicio</button>
-          <button onClick={() => setActiveTab('projects')} className={`flex-1 min-w-[70px] py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'projects' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><FolderKanban size={12}/> Proyectos</button>
-          <button onClick={() => setActiveTab('team')} className={`flex-1 min-w-[70px] py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'team' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Users size={12}/> Equipo</button>
-          <button onClick={() => setActiveTab('contact')} className={`flex-1 min-w-[70px] py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'contact' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Phone size={12}/> Contacto</button>
+        <div className="flex border-b border-white/10 bg-black/10 overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/40 [&::-webkit-scrollbar-thumb]:rounded-full pb-[1px]">
+          <button onClick={() => setActiveTab('home')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'home' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Inicio</button>
+          <button onClick={() => setActiveTab('projects')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'projects' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><FolderKanban size={12}/> Proyectos</button>
+          <button onClick={() => setActiveTab('team')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'team' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Users size={12}/> Equipo</button>
+          <button onClick={() => setActiveTab('highlights')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'highlights' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Highlights</button>
+          <button onClick={() => setActiveTab('services')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'services' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Servicios</button>
+          <button onClick={() => setActiveTab('contact')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'contact' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Phone size={12}/> Contacto</button>
         </div>
 
         {/* Form Area */}
@@ -1209,6 +1211,41 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'highlights' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+              <div className="pb-6 border-b border-white/10 mb-6">
+                <h3 className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-4">Textos Principales</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Highlights (EN)</label>
+                    <textarea value={draftSettings.highlights_title_en ?? ''} onChange={e => updateSetting('highlights_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título Highlights (ES)</label>
+                    <textarea value={draftSettings.highlights_title_es ?? ''} onChange={e => updateSetting('highlights_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                </div>
+                <div className="mt-8">
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                    Los proyectos mostrados aquí se administran desde la pestaña "Proyectos".
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(!activeEditor || activeEditor.element === 'project' || activeEditor.element === 'member' || activeEditor.element === 'filters') && activeTab === 'services' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+              <div className="pb-6 border-b border-white/10 mb-6 flex flex-col items-center justify-center py-12 text-center">
+                <Layout size={32} className="text-white/20 mb-4" />
+                <h3 className="text-[12px] uppercase tracking-widest text-white/50 font-bold mb-2">Próximamente: Servicios</h3>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest">
+                  Esta sección está lista para que agreguemos la funcionalidad de servicios.
+                </p>
+              </div>
             </div>
           )}
 

@@ -42,20 +42,20 @@ export default function Contact() {
   };
 
   return (
-    <div className="bg-white min-h-screen flex flex-col">
+    <div className="bg-white h-screen overflow-hidden flex flex-col">
       <section 
         id="contact" 
-        className="min-h-screen bg-white text-black flex items-center justify-center py-24 px-6 md:px-12 relative overflow-hidden perspective-1000"
+        className="flex-1 bg-white text-black flex items-center justify-center p-6 md:p-12 relative overflow-hidden perspective-1000"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         {/* Abstract Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px]" />
         </div>
 
-        <div className="w-full max-w-4xl relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+        <div className="w-full max-w-5xl relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
           {/* Text Content */}
           <motion.div
@@ -64,28 +64,28 @@ export default function Contact() {
             transition={{ duration: 0.8 }}
           >
             <Editable section="contact" element="subtitle">
-              <h2 className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-6">{subtitle}</h2>
+              <h2 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-4">{subtitle}</h2>
             </Editable>
             <Editable section="contact" element="title">
-              <h1 className="text-5xl md:text-7xl font-light uppercase tracking-tight mb-8 leading-none whitespace-pre-line">
+              <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tight mb-6 leading-none whitespace-pre-line">
                 {title}
               </h1>
             </Editable>
             <Editable section="contact" element="description">
-              <p className="text-gray-600 font-light leading-relaxed mb-8 whitespace-pre-line">
+              <p className="text-gray-500 font-medium leading-relaxed mb-10 text-sm md:text-base max-w-md whitespace-pre-line">
                 {description}
               </p>
             </Editable>
             
             <Editable section="contact" element="info">
-              <div className="space-y-2 text-sm font-mono text-gray-500">
-                {settings?.contact_email && <p>{settings.contact_email}</p>}
-                {settings?.contact_phone && <p>{settings.contact_phone}</p>}
-                {settings?.contact_address && <p>{settings.contact_address}</p>}
+              <div className="space-y-3 text-[10px] md:text-xs font-bold tracking-widest text-gray-500 uppercase">
+                {settings?.contact_email && <p className="hover:text-black transition-colors">{settings.contact_email}</p>}
+                {settings?.contact_phone && <p className="hover:text-black transition-colors">{settings.contact_phone}</p>}
+                {settings?.contact_address && <p className="hover:text-black transition-colors">{settings.contact_address}</p>}
                 {!settings?.contact_email && !settings?.contact_phone && !settings?.contact_address && (
                   <>
-                    <p>INFO@ETCPROYECTO.COM</p>
-                    <p>+44 (0) 20 1234 5678</p>
+                    <p className="hover:text-black transition-colors">INFO@ETCPROYECTO.COM</p>
+                    <p className="hover:text-black transition-colors">+44 (0) 20 1234 5678</p>
                   </>
                 )}
               </div>
@@ -100,12 +100,12 @@ export default function Contact() {
               rotateY,
               transformStyle: "preserve-3d"
             }}
-            className="bg-gray-200 p-8 md:p-12 rounded-2xl border border-black/10 shadow-2xl relative group"
+            className="bg-[#f5f5f5] p-8 md:p-10 rounded-2xl border border-black/5 shadow-2xl relative group"
           >
             {/* Glossy Reflection */}
             <div className="absolute inset-0 bg-gradient-to-br from-black/5 to-transparent rounded-2xl pointer-events-none" />
 
-            <div className="space-y-8" style={{ transform: "translateZ(20px)" }}>
+            <div className="space-y-6" style={{ transform: "translateZ(20px)" }}>
               <InputGroup label={t('contact.name')} type="text" placeholder={t('contact.placeholder.name')} />
               <InputGroup label={t('contact.email')} type="email" placeholder={t('contact.placeholder.email')} />
               <InputGroup label={t('contact.message')} type="textarea" placeholder={t('contact.placeholder.message')} />
@@ -113,17 +113,24 @@ export default function Contact() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs rounded-lg flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors"
+                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-[10px] rounded-lg flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors shadow-lg"
               >
                 {t('contact.send')}
-                <Send className="w-4 h-4" />
+                <Send className="w-3 h-3" />
               </motion.button>
             </div>
           </motion.form>
         </div>
       </section>
       
-      <Footer />
+      {/* Mini Simple Footer Footer */}
+      <div className="py-6 px-12 border-t border-gray-100 flex justify-between items-center bg-white shrink-0">
+        <p className="text-[9px] font-bold tracking-[0.2em] text-gray-300 uppercase">© 2024 ETC PROYECTO. ALL RIGHTS RESERVED.</p>
+        <div className="flex gap-8">
+          <a href="#" className="text-[9px] font-bold tracking-[0.2em] text-gray-400 hover:text-black transition-colors uppercase">INSTAGRAM</a>
+          <a href="#" className="text-[9px] font-bold tracking-[0.2em] text-gray-400 hover:text-black transition-colors uppercase">LINKEDIN</a>
+        </div>
+      </div>
     </div>
   );
 }

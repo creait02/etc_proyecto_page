@@ -64,7 +64,7 @@ export default function HomeHorizontalLayout({ onSelectProject }: HomeHorizontal
   }, []);
 
   return (
-    <div className="w-full h-screen bg-black text-white overflow-hidden flex flex-col">
+    <div className="w-full h-full bg-black text-white overflow-hidden flex flex-col">
       {/* Main Horizontal Scroll Container (Only 2 Slides: Hero + Projects) */}
       <div 
         ref={scrollContainerRef}

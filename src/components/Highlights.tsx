@@ -1,29 +1,38 @@
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteData } from '../contexts/SiteContext';
+import Editable from './Editable';
 import { HelpCircle, ArrowRight } from 'lucide-react';
-import { projects } from '../data/mockData';
-
-const highlightsData = projects.map((project, index) => ({
-  id: index + 1,
-  name: project.title,
-  nameEs: project.titleEs,
-  role: project.category,
-  roleEs: project.categoryEs,
-  image: project.image,
-  description: project.description,
-  descriptionEs: project.descriptionEs,
-}));
 
 export default function Highlights() {
   const { language } = useLanguage();
-  const [selectedItem, setSelectedItem] = useState<typeof highlightsData[0] | null>(null);
+  const { settings, projects: liveProjects } = useSiteData();
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
   const isScrollingRef = useRef(false);
+
+  const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : [];
+  
+  const highlightsData = displayProjects.map((project: any, index: number) => ({
+    id: project.id || index + 1,
+    name: project.title,
+    nameEs: project.title_es || project.title,
+    role: project.category,
+    roleEs: project.category_es || project.category,
+    image: project.image_url || project.image,
+    description: project.description,
+    descriptionEs: project.description_es || project.description,
+    projectRef: project
+  }));
+
+  const mainTitleEn = settings?.highlights_title_en || 'STORIES\nWE BUILD';
+  const mainTitleEs = settings?.highlights_title_es || 'HISTORIAS\nQUE CONSTRUIMOS';
+
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
@@ -156,15 +165,17 @@ export default function Highlights() {
             className="w-full h-full flex flex-col px-6 md:px-12 lg:px-24 pt-8 md:pt-12 pb-6 md:pb-8 overflow-hidden"
           >
             {/* Header */}
-            <div className="mb-6 md:mb-8 w-full max-w-[1300px] mx-auto shrink-0">
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight uppercase leading-[1.1] whitespace-pre-line text-white">
-                {language === 'en' ? 'STORIES\nWE BUILD' : 'HISTORIAS\nQUE CONSTRUIMOS'}
-              </h1>
+            <div className="mb-3 md:mb-5 w-full max-w-7xl mx-auto shrink-0">
+              <Editable section="highlights" element="title">
+                <h1 className="text-xl md:text-3xl lg:text-[clamp(1.5rem,5vh,3rem)] font-bold tracking-tight uppercase leading-none whitespace-pre-line text-white">
+                  {language === 'en' ? mainTitleEn : mainTitleEs}
+                </h1>
+              </Editable>
             </div>
 
             {/* Grid Container for viewport fitting */}
-            <div className="w-full max-w-[1300px] mx-auto flex-1 min-h-0">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 w-full h-full auto-rows-[minmax(0,1fr)]">
+            <div className="w-full max-w-7xl mx-auto flex-1 min-h-0">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 w-full h-full auto-rows-[minmax(0,1fr)]">
                 {highlightsData.slice(0, 7).map((item, index) => (
                   <motion.div 
                     key={item.id}
@@ -242,22 +253,22 @@ export default function Highlights() {
             </div>
 
             {/* Right Side: Content */}
-            <div className="flex-1 h-full p-6 md:p-12 lg:p-20 flex flex-col overflow-hidden">
+            <div className="flex-1 h-full p-6 md:p-8 lg:p-16 xl:p-20 flex flex-col overflow-hidden">
               <div className="max-w-2xl flex flex-col h-full pt-10 md:pt-0">
                 {/* Category Tag */}
-                <div className="mb-4 md:mb-8">
+                <div className="mb-4 md:mb-6">
                   <span className="px-4 py-1.5 bg-gray-800/50 rounded-full text-[9px] md:text-[10px] uppercase tracking-widest text-gray-300 border border-white/5">
                     {language === 'en' ? selectedItem.role : selectedItem.roleEs}
                   </span>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 md:mb-8 tracking-tight leading-tight">
+                <h2 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 md:mb-6 tracking-tight leading-tight">
                   {language === 'en' ? selectedItem.name : selectedItem.nameEs}
                 </h2>
 
                 {/* Subtitle */}
-                <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-4 md:mb-6 font-medium">
+                <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-3 md:mb-4 font-medium">
                   LOREM IPSUM
                 </h3>
 

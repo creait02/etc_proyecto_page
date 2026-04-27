@@ -32,7 +32,7 @@ function MainSite() {
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
   const [isContactTransition, setIsContactTransition] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [view, setView] = useState<'home' | 'projects' | 'contact' | 'highlights' | 'team'>('home');
+  const [view, setView] = useState<'home' | 'projects' | 'contact' | 'highlights' | 'team' | 'services'>('home');
   const { projects: liveProjects } = useSiteData();
 
   const displayProjects = liveProjects && liveProjects.length > 0 ? liveProjects : projects;
@@ -42,7 +42,7 @@ function MainSite() {
     const handleAdminMessage = (event: MessageEvent) => {
       if (event.data?.type === 'CHANGE_VIEW') {
         const newView = event.data.payload?.view;
-        if (newView && ['home', 'projects', 'contact', 'highlights', 'team'].includes(newView)) {
+        if (newView && ['home', 'projects', 'contact', 'highlights', 'team', 'services'].includes(newView)) {
           setView(newView as any);
         }
       }
@@ -66,7 +66,7 @@ function MainSite() {
 
   return (
     <SmoothScroll onInit={setLenisInstance}>
-      <div className="bg-black min-h-screen text-white selection:bg-white selection:text-black">
+      <div className="bg-black h-screen w-full overflow-hidden text-white selection:bg-white selection:text-black flex flex-col relative">
         <CustomCursor />
         <Header 
           onMenuClick={() => setIsMenuOpen(true)} 
@@ -80,13 +80,14 @@ function MainSite() {
           onHomeClick={() => setView('home')}
           onHighlightsClick={() => setView('highlights')}
           onTeamClick={() => setView('team')}
+          onServicesClick={() => setView('services')}
         />
         <ProjectView 
           project={selectedProject} 
           onClose={() => setSelectedProject(null)} 
         />
         
-        <div className="relative min-h-screen w-full perspective-[2000px]">
+        <div className="flex-1 relative w-full perspective-[2000px] overflow-hidden">
           <AnimatePresence mode="wait">
             {view === 'home' && (
               <motion.div 
@@ -95,7 +96,7 @@ function MainSite() {
                 animate={{ opacity: 1, rotateY: 0, scale: 1 }}
                 exit={{ opacity: 0, rotateY: 90, scale: 0.8 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="origin-center w-full bg-black h-screen overflow-hidden"
+                className="absolute inset-0 bg-black overflow-hidden"
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 <HomeHorizontalLayout onSelectProject={setSelectedProject} />
@@ -154,12 +155,27 @@ function MainSite() {
                 <Team />
               </motion.div>
             )}
+
+            {view === 'services' && (
+              <motion.div
+                key="services"
+                initial={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 z-40 bg-[#111111]"
+              >
+                <Services />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
     </SmoothScroll>
   );
 }
+
+import Services from './components/Services';
 
 export default function App() {
   return (

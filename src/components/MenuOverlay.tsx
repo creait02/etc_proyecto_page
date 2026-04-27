@@ -12,6 +12,7 @@ interface MenuOverlayProps {
   onHomeClick: () => void;
   onHighlightsClick: () => void;
   onTeamClick: () => void;
+  onServicesClick: () => void;
 }
 
 const menuItems = [
@@ -30,7 +31,7 @@ const servicesList = [
   "services.create"
 ];
 
-export default function MenuOverlay({ isOpen, onClose, onContactClick, onProjectsClick, onHomeClick, onHighlightsClick, onTeamClick }: MenuOverlayProps) {
+export default function MenuOverlay({ isOpen, onClose, onContactClick, onProjectsClick, onHomeClick, onHighlightsClick, onTeamClick, onServicesClick }: MenuOverlayProps) {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const { language, toggleLanguage, t } = useLanguage();
 
@@ -161,7 +162,10 @@ export default function MenuOverlay({ isOpen, onClose, onContactClick, onProject
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ duration: 0.4, delay: 0.1 + i * 0.05 }}
                         className="text-xl md:text-3xl font-light text-gray-400 hover:text-white transition-colors text-left"
-                        onClick={onClose}
+                        onClick={() => {
+                          onClose();
+                          onServicesClick();
+                        }}
                       >
                         {t(serviceKey)}
                       </motion.button>

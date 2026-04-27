@@ -33,6 +33,8 @@ export const defaultSettings = {
   contact_phone: "+58 412 000 0000",
   contact_address: "Caracas, Venezuela",
   logo_url: "https://res.cloudinary.com/debywjrlg/image/upload/v1773851845/logo_ETC_white_zlrhe4.png",
+  highlights_title_es: "HISTORIAS\nQUE CONSTRUIMOS",
+  highlights_title_en: "STORIES\nWE BUILD",
   team_title_es: "Estudio\nTransformación\nConstrucción",
   team_title_en: "Studio\nTransformation\nConstruction",
   team_subtitle_es: "LOREM IPSUM",
