@@ -19,8 +19,36 @@ export default function Dashboard() {
   const [editingProject, setEditingProject] = useState<any>(null);
 
   // Highlights State
+  const fallbackHighlights = [
+    { 
+      id: 1, 
+      title_en: 'LOREM IPSUM TITLE', 
+      title_es: 'LOREM IPSUM TITLE', 
+      category_en: 'LOREM IPSUM ROLE', 
+      category_es: 'LOREM IPSUM ROLE', 
+      description_en: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', 
+      description_es: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      image_url: '' 
+    },
+    { 
+      id: 2, 
+      title_en: 'LOREM IPSUM TITLE 2', 
+      title_es: 'LOREM IPSUM TITLE 2', 
+      category_en: 'LOREM IPSUM ROLE 2', 
+      category_es: 'LOREM IPSUM ROLE 2', 
+      description_en: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', 
+      description_es: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      image_url: '' 
+    }
+  ];
+
   const [highlights, setHighlights] = useState<any[]>([]);
+  const highlightsRef = useRef<any[]>([]);
   const [editingHighlight, setEditingHighlight] = useState<any>(null);
+
+  useEffect(() => {
+    highlightsRef.current = highlights;
+  }, [highlights]);
 
   // Team State
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -115,18 +143,24 @@ export default function Dashboard() {
         } else if (section === 'highlights' || element === 'new_highlight') {
           setActiveTab('highlights');
           if (element === 'new_highlight') {
-            setEditingHighlight({});
+            setEditingHighlight({ id: null, title_en: '', title_es: '', category_en: '', category_es: '', description_en: '', description_es: '', image_url: '' });
           } else if (projectId) {
             const highlightIdStr = String(projectId);
-            const hig = highlights.find(h => String(h.id) === highlightIdStr);
+            const hig = highlightsRef.current.find(h => String(h.id) === highlightIdStr);
             if (hig) {
               setEditingHighlight(hig);
             } else {
-              const loadHighlight = async () => {
-                const { data } = await supabase.from('highlights').select('*').eq('id', projectId).single();
-                if (data) setEditingHighlight(data);
-              };
-              loadHighlight();
+              // Check fallback
+              const fallbackHig = fallbackHighlights.find(h => String(h.id) === highlightIdStr);
+              if (fallbackHig) {
+                setEditingHighlight(fallbackHig);
+              } else {
+                const loadHighlight = async () => {
+                  const { data } = await supabase.from('highlights').select('*').eq('id', projectId).single();
+                  if (data) setEditingHighlight(data);
+                };
+                loadHighlight();
+              }
             }
           }
         } else if (section === 'contact') {
@@ -144,7 +178,11 @@ export default function Dashboard() {
               member = fallbackTeamMembers.find(m => String(m.id) === String(memberId));
             }
             if (member) {
-              setEditingMember(member);
+              setEditingMember({
+                ...member,
+                role_en: (member as any).role_en || (member as any).role || '',
+                role_es: (member as any).role_es || (member as any).role || ''
+              });
             }
           }
         }
@@ -189,8 +227,10 @@ export default function Dashboard() {
         setTeamMembers(fallbackTeamMembers);
       }
 
-      if (highRes.data) {
+      if (highRes.data && highRes.data.length > 0) {
         setHighlights(highRes.data);
+      } else {
+        setHighlights(fallbackHighlights);
       }
     } catch (error) {
       console.error('Error fetching site data in Dashboard:', error);
@@ -621,7 +661,14 @@ export default function Dashboard() {
                     activeEditor.element === 'image' ? 'Imagen del Proyecto' : 
                     activeEditor.element === 'category' ? 'Categoría' : 
                     activeEditor.element === 'description' ? (activeEditor.section === 'services' ? 'Descripción Servicios' : activeEditor.section === 'contact' ? 'Descripción Contacto' : activeEditor.section === 'team' ? 'Descripción Equipo' : 'Descripción') : 
-                    activeEditor.element === 'title' ? (activeEditor.section === 'services' ? 'Título Servicios' : activeEditor.section === 'home' ? 'Título Principal' : activeEditor.section === 'contact' ? 'Título Contacto' : activeEditor.section === 'team' ? 'Título Equipo' : 'Título del Proyecto') :
+                    activeEditor.element === 'title' ? (
+                      activeEditor.section === 'services' ? 'Título Servicios' : 
+                      activeEditor.section === 'home' ? 'Título Principal' : 
+                      activeEditor.section === 'contact' ? 'Título Contacto' : 
+                      activeEditor.section === 'team' ? 'Título Equipo' : 
+                      activeEditor.section === 'highlights' ? (activeEditor.projectId ? 'Título del Highlight' : 'Título de Highlights') :
+                      'Título del Proyecto'
+                    ) :
                     activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : activeEditor.section === 'contact' ? 'Subtítulo Contacto' : activeEditor.section === 'team' ? 'Subtítulo Equipo' : 'Subtítulo del Proyecto') :
                     activeEditor.element === 'buttons' ? 'Botones de Servicios' :
                     activeEditor.element === 'stats' ? 'Estadísticas de Servicios' :
@@ -810,21 +857,39 @@ export default function Dashboard() {
 
                   <div className="space-y-4">
                     {(activeEditor.element === 'title' || activeEditor.element === 'highlight') && (
-                      <div className="animate-in slide-in-from-top-2 duration-300">
-                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Título (ES)</label>
-                        <input value={editingHighlight.title_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, title_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                      <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Título (ES)</label>
+                          <input value={editingHighlight.title_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, title_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Título (EN)</label>
+                          <input value={editingHighlight.title_en || editingHighlight.title || ''} onChange={e=>setEditingHighlight({...editingHighlight, title_en: e.target.value, title: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                        </div>
                       </div>
                     )}
                     {(activeEditor.element === 'category' || activeEditor.element === 'highlight') && (
-                      <div className="animate-in slide-in-from-top-2 duration-300">
-                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Categoría (ES)</label>
-                        <input value={editingHighlight.category_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                      <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Categoría (ES)</label>
+                          <input value={editingHighlight.category_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, category_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Categoría (EN)</label>
+                          <input value={editingHighlight.category_en || editingHighlight.category || ''} onChange={e=>setEditingHighlight({...editingHighlight, category_en: e.target.value, category: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30" />
+                        </div>
                       </div>
                     )}
                     {(activeEditor.element === 'description' || activeEditor.element === 'highlight') && (
-                      <div className="animate-in slide-in-from-top-2 duration-300">
-                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Descripción (ES)</label>
-                        <textarea value={editingHighlight.description_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-24 resize-none" />
+                      <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Descripción (ES)</label>
+                          <textarea value={editingHighlight.description_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-24 resize-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Descripción (EN)</label>
+                          <textarea value={editingHighlight.description_en || editingHighlight.description || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_en: e.target.value, description: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-24 resize-none" />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1154,6 +1219,19 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Subtítulo (ES)</label>
                     <textarea value={draftSettings.home_subtitle_es || ''} onChange={e => updateSetting('home_subtitle_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-20 resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {activeEditor.element === 'title' && activeEditor.section === 'highlights' && !activeEditor.projectId && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título de Highlights (EN)</label>
+                    <textarea value={draftSettings.highlights_title_en || ''} onChange={e => updateSetting('highlights_title_en', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Título de Highlights (ES)</label>
+                    <textarea value={draftSettings.highlights_title_es || ''} onChange={e => updateSetting('highlights_title_es', e.target.value)} className="w-full bg-black border border-white/10 rounded p-3 text-xs outline-none focus:border-white/30 transition-colors h-24 resize-none" />
                   </div>
                 </div>
               )}
