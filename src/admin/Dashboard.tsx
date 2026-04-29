@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video, Play, Film } from 'lucide-react';
+import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video, Play, Film, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
 import { defaultSettings } from '../contexts/SiteContext';
@@ -9,6 +9,7 @@ import { projects as fallbackProjects } from '../data/mockData';
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Settings State
   const [originalSettings, setOriginalSettings] = useState<any>({});
@@ -66,9 +67,18 @@ export default function Dashboard() {
     highlightsRef.current = highlights;
   }, [highlights]);
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email || null);
+    });
+  }, []);
+
   // Team State
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [editingMember, setEditingMember] = useState<any>(null);
+  const [allowedUsers, setAllowedUsers] = useState<any[]>([]);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserName, setNewUserName] = useState('');
 
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -225,11 +235,12 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [setRes, projRes, teamRes, highRes] = await Promise.all([
+      const [setRes, projRes, teamRes, highRes, usersRes] = await Promise.all([
         supabase.from('site_settings').select('*').single(),
         supabase.from('projects').select('*').order('created_at', { ascending: false }),
         supabase.from('team_members').select('*').order('order', { ascending: true }),
-        supabase.from('highlights').select('*').order('order', { ascending: true })
+        supabase.from('highlights').select('*').order('order', { ascending: true }),
+        supabase.from('allowed_users').select('*').order('created_at', { ascending: false })
       ]);
       
       if (setRes.data) {
@@ -261,6 +272,10 @@ export default function Dashboard() {
         setHighlights(highRes.data);
       } else {
         setHighlights(fallbackHighlights);
+      }
+
+      if (usersRes.data) {
+        setAllowedUsers(usersRes.data);
       }
     } catch (error) {
       console.error('Error fetching site data in Dashboard:', error);
@@ -661,6 +676,47 @@ export default function Dashboard() {
 
 
 
+  const addAllowedUser = async () => {
+    if (!newUserEmail.trim()) return;
+    
+    // Check if it's already in the list
+    if (allowedUsers.some(u => u.email === newUserEmail)) {
+      toast.error('El usuario ya está en la lista');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('allowed_users').insert([{
+        email: newUserEmail,
+        name: newUserName,
+        role: 'editor'
+      }]);
+      
+      if (error) throw error;
+      
+      toast.success('Acceso concedido');
+      setNewUserEmail('');
+      setNewUserName('');
+      fetchData();
+    } catch (error: any) {
+      toast.error('Error al agregar usuario', { description: error.message });
+    }
+  };
+
+  const removeAllowedUser = async (id: string) => {
+    if (!confirm('¿Seguro que deseas revocar el acceso a este usuario?')) return;
+    
+    try {
+      const { error } = await supabase.from('allowed_users').delete().eq('id', id);
+      if (error) throw error;
+      
+      toast.success('Acceso revocado');
+      fetchData();
+    } catch (error: any) {
+      toast.error('Error al eliminar usuario', { description: error.message });
+    }
+  };
+
   const handleLogout = async () => {
     localStorage.removeItem('etc_demo_session');
     await supabase.auth.signOut();
@@ -683,20 +739,70 @@ export default function Dashboard() {
         )}
         {/* Header */}
         <div className="h-14 px-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-          <span className="font-bold tracking-widest uppercase text-[10px]">ETC Builder</span>
-          <button onClick={handleLogout} className="text-gray-500 hover:text-white transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
+              <span className="text-black font-black text-[10px]">ETC</span>
+            </div>
+            <span className="font-bold tracking-[0.2em] uppercase text-[10px]">CMS Panel</span>
+          </div>
+          <button onClick={handleLogout} className="text-gray-500 hover:text-white transition-colors" title="Cerrar Sesión">
             <LogOut size={14} />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-white/10 bg-black/10 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-black/20 [&::-webkit-scrollbar-thumb]:bg-white/30 hover:[&::-webkit-scrollbar-thumb]:bg-white/50 [&::-webkit-scrollbar-thumb]:rounded-full pb-[1px]">
-          <button onClick={() => setActiveTab('home')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'home' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Inicio</button>
-          <button onClick={() => setActiveTab('projects')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'projects' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><FolderKanban size={12}/> Proyectos</button>
-          <button onClick={() => setActiveTab('team')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'team' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Users size={12}/> Equipo</button>
-          <button onClick={() => setActiveTab('highlights')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'highlights' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Highlights</button>
-          <button onClick={() => setActiveTab('services')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'services' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Layout size={12}/> Servicios</button>
-          <button onClick={() => setActiveTab('contact')} className={`shrink-0 px-4 py-3 text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 transition-colors ${activeTab === 'contact' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}><Phone size={12}/> Contacto</button>
+        {/* Vertical Navigation Menu */}
+        <div className="flex-none py-4 border-b border-white/10 bg-black/10">
+          <nav className="px-3 space-y-1">
+            <button 
+              onClick={() => setActiveTab('home')} 
+              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Layout size={14}/> Inicio
+            </button>
+            <button 
+              onClick={() => setActiveTab('projects')} 
+              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <FolderKanban size={14}/> Proyectos
+            </button>
+            <button 
+              onClick={() => setActiveTab('team')} 
+              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Users size={14}/> Equipo
+            </button>
+            <button 
+              onClick={() => setActiveTab('highlights')} 
+              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Layout size={14}/> Highlights
+            </button>
+            <button 
+              onClick={() => setActiveTab('services')} 
+              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Layout size={14}/> Servicios
+            </button>
+            <button 
+              onClick={() => setActiveTab('contact')} 
+              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Phone size={14}/> Contacto
+            </button>
+
+            {/* Special Section for Admin Access */}
+            {userEmail?.toLowerCase() === 'it@corpocrea.com' && (
+              <div className="pt-4 mt-4 border-t border-white/5">
+                <p className="px-4 text-[8px] uppercase tracking-[0.3em] text-blue-400 font-black mb-2">Administración</p>
+                <button 
+                  onClick={() => setActiveTab('access')} 
+                  className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'access' ? 'bg-blue-500 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-500/10'}`}
+                >
+                  <Shield size={14}/> Gestionar Accesos
+                </button>
+              </div>
+            )}
+          </nav>
         </div>
 
         {/* Form Area */}
@@ -2133,6 +2239,72 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'access' && userEmail?.toLowerCase() === 'it@corpocrea.com' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+              <div className="space-y-4">
+                <h3 className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold">Gestión de Accesos (IT)</h3>
+                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest">
+                  Controla quién tiene permitido entrar al gestor de contenido.
+                </p>
+              </div>
+
+              {/* Add New User */}
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-4 shadow-xl">
+                <div className="space-y-3">
+                  <label className="block text-[8px] uppercase tracking-widest text-gray-500">Nuevo Usuario</label>
+                  <input 
+                    type="email" 
+                    placeholder="CORREO ELECTRÓNICO"
+                    value={newUserEmail}
+                    onChange={e => setNewUserEmail(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500 transition-colors uppercase tracking-widest"
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="NOMBRE (OPCIONAL)"
+                    value={newUserName}
+                    onChange={e => setNewUserName(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500 transition-colors uppercase tracking-widest"
+                  />
+                </div>
+                <button 
+                  onClick={addAllowedUser}
+                  className="w-full h-10 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <Plus size={14} /> Conceder Acceso
+                </button>
+              </div>
+
+              {/* User List */}
+              <div className="space-y-3 pt-6 border-t border-white/10">
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-4">Usuarios Autorizados</label>
+                <div className="space-y-2">
+                  {allowedUsers.map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-3 bg-black/40 border border-white/5 rounded-lg group hover:border-white/20 transition-all">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-white font-bold tracking-widest uppercase">{u.email}</span>
+                        <span className="text-[8px] text-gray-500 uppercase tracking-widest">{u.name || (u.email === 'it@corpocrea.com' ? 'Super Admin' : 'Editor')}</span>
+                      </div>
+                      {u.email !== 'it@corpocrea.com' && (
+                        <button 
+                          onClick={() => removeAllowedUser(u.id)}
+                          className="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {allowedUsers.length === 0 && (
+                     <div className="text-center py-8 border border-dashed border-white/10 rounded-lg">
+                        <p className="text-[10px] text-gray-600 uppercase tracking-widest">No hay usuarios adicionales</p>
+                     </div>
+                  )}
                 </div>
               </div>
             </div>

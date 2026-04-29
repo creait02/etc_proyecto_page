@@ -166,6 +166,32 @@ ADD COLUMN IF NOT EXISTS gallery_url_2 TEXT;
 -- Protect highlights
 ALTER TABLE public.highlights ENABLE ROW LEVEL SECURITY;
 
+-- Create allowed_users table
+CREATE TABLE IF NOT EXISTS public.allowed_users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    role TEXT DEFAULT 'editor', -- 'admin' or 'editor'
+    name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Protect allowed_users
+ALTER TABLE public.allowed_users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read for authentication check" 
+ON public.allowed_users FOR SELECT 
+TO authenticated 
+USING (true);
+
+CREATE POLICY "Allow full access for IT user" 
+ON public.allowed_users FOR ALL 
+TO authenticated 
+USING (auth.jwt() ->> 'email' = 'it@corpocrea.com');
+
+-- Ensure IT user is always conceptually allowed
+-- Note: User emails are managed via the IT Dashboard view
+
+
 DROP POLICY IF EXISTS "Public highlights are viewable by everyone." ON public.highlights;
 CREATE POLICY "Public highlights are viewable by everyone." 
 ON public.highlights FOR SELECT USING (true);

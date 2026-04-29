@@ -17,17 +17,45 @@ export default function Login() {
     setMessage('');
     
     try {
+      const emailLower = email.toLowerCase().trim();
+
+      // 1. Verificación previa en nuestra tabla de permitidos
+      if (emailLower !== 'it@corpocrea.com') {
+        const { data: allowed, error: checkError } = await supabase
+          .from('allowed_users')
+          .select('email')
+          .eq('email', emailLower)
+          .maybeSingle();
+
+        if (checkError) throw new Error("Error al verificar permisos.");
+        if (!allowed) {
+          toast.error('Acceso no autorizado', {
+            description: 'Tu correo no está en la lista de usuarios permitidos.'
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Si está en la lista (o es IT), pedimos el OTP a Supabase
+      // Importante: shouldCreateUser debe ser true para que Supabase cree el usuario en auth.users si es la primera vez
       const { error } = await supabase.auth.signInWithOtp({ 
-        email,
+        email: emailLower,
         options: {
-          shouldCreateUser: false, // Only allow existing users (admins)
+          shouldCreateUser: true, 
         }
       });
 
       if (error) {
-        toast.error('Error de autenticación', {
-          description: error.message
-        });
+        if (error.message === 'Signups not allowed for otp') {
+          toast.error('Error de Supabase', {
+            description: 'Los registros están deshabilitados en el panel de Supabase. Debes activarlos para permitir nuevos usuarios.'
+          });
+        } else {
+          toast.error('Error de autenticación', {
+            description: error.message
+          });
+        }
       } else {
         setStep('otp');
         toast.success('Código enviado', {
@@ -36,15 +64,9 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error('OTP Request Error:', err);
-      if (err.message === 'Failed to fetch') {
-        toast.error('Error de conexión', {
-          description: 'No se pudo contactar con el servidor de autenticación. Verifica tu internet.'
-        });
-      } else {
-        toast.error('Error inesperado', {
-          description: 'Ocurrió un error al solicitar el código.'
-        });
-      }
+      toast.error('Error', {
+        description: err.message || 'Ocurrió un error al solicitar el código.'
+      });
     } finally {
       setLoading(false);
     }
