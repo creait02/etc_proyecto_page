@@ -132,11 +132,11 @@ ON public.team_members FOR DELETE USING (auth.uid() IS NOT NULL);
 -- Create highlights table
 CREATE TABLE IF NOT EXISTS public.highlights (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT,
+    title_en TEXT,
     title_es TEXT,
-    category TEXT,
+    category_en TEXT,
     category_es TEXT,
-    description TEXT,
+    description_en TEXT,
     description_es TEXT,
     body_en TEXT,
     body_es TEXT,
@@ -144,11 +144,24 @@ CREATE TABLE IF NOT EXISTS public.highlights (
     video_url TEXT,
     gallery_url_1 TEXT,
     gallery_url_2 TEXT,
-    image TEXT,
     "order" INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Migration for highlights table (to ensure columns exist if table already created)
+ALTER TABLE public.highlights 
+ADD COLUMN IF NOT EXISTS title_en TEXT,
+ADD COLUMN IF NOT EXISTS title_es TEXT,
+ADD COLUMN IF NOT EXISTS category_en TEXT,
+ADD COLUMN IF NOT EXISTS category_es TEXT,
+ADD COLUMN IF NOT EXISTS description_en TEXT,
+ADD COLUMN IF NOT EXISTS description_es TEXT,
+ADD COLUMN IF NOT EXISTS body_en TEXT,
+ADD COLUMN IF NOT EXISTS body_es TEXT,
+ADD COLUMN IF NOT EXISTS video_url TEXT,
+ADD COLUMN IF NOT EXISTS gallery_url_1 TEXT,
+ADD COLUMN IF NOT EXISTS gallery_url_2 TEXT;
 
 -- Protect highlights
 ALTER TABLE public.highlights ENABLE ROW LEVEL SECURITY;

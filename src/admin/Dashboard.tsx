@@ -56,6 +56,12 @@ export default function Dashboard() {
   const highlightsRef = useRef<any[]>([]);
   const [editingHighlight, setEditingHighlight] = useState<any>(null);
 
+  const isUUID = (id: any) => {
+    if (!id) return false;
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return typeof id === 'string' && uuidRegex.test(id);
+  };
+
   useEffect(() => {
     highlightsRef.current = highlights;
   }, [highlights]);
@@ -276,13 +282,12 @@ export default function Dashboard() {
       return;
     }
 
-    // Límite de peso: 5MB para imágenes, 30MB para vídeos
-    const maxSizeMB = isVideo ? 30 : 5;
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const maxSizeInMB = isVideo ? 100 : 20;
+    const fileSizeInMB = file.size / (1024 * 1024);
 
-    if (file.size > maxSizeBytes) {
+    if (fileSizeInMB > maxSizeInMB) {
       toast.error('Archivo demasiado grande', {
-        description: `El límite es de ${maxSizeMB}MB para ${isVideo ? 'vídeos' : 'imágenes'}.`
+        description: `Tu archivo pesa ${fileSizeInMB.toFixed(2)}MB. El límite es de ${maxSizeInMB}MB para ${isVideo ? 'vídeos' : 'imágenes'}.`
       });
       e.target.value = '';
       return;
@@ -479,8 +484,8 @@ export default function Dashboard() {
         // Remove mock data mappings from the project object
         const { image, title, titleEs, category, categoryEs, description, descriptionEs, status, gallery, ...projectDataToSave } = editingProject;
 
-        // If 'id' is present, we update. Otherwise insert.
-        if (projectDataToSave.id !== undefined && projectDataToSave.id !== null) {
+        // If 'id' is present and is a valid UUID, we update. Otherwise insert.
+        if (isUUID(projectDataToSave.id)) {
           const { error } = await supabase.from('projects').update(projectDataToSave).eq('id', projectDataToSave.id);
           if (error) throw error;
         } else {
@@ -504,7 +509,7 @@ export default function Dashboard() {
         // Prepare member data, ignore `image` and `role` (legacy frontend fields)
         const { image, role, ...memberDataToSave } = editingMember;
 
-        if (memberDataToSave.id !== undefined && memberDataToSave.id !== null) {
+        if (isUUID(memberDataToSave.id)) {
           const { error } = await supabase.from('team_members').update(memberDataToSave).eq('id', memberDataToSave.id);
           if (error) throw error;
         } else {
@@ -525,9 +530,30 @@ export default function Dashboard() {
           return;
         }
 
-        const { image, title, titleEs, category, categoryEs, description, descriptionEs, body, role, ...highlightDataToSave } = editingHighlight;
+        const { 
+          image, title, titleEs, category, categoryEs, description, descriptionEs, body, role,
+          id, // explicitly take id out to handle separately
+          ...data 
+        } = editingHighlight;
 
-        if (highlightDataToSave.id !== undefined && highlightDataToSave.id !== null) {
+        const highlightDataToSave = {
+          id: id,
+          title_en: data.title_en,
+          title_es: data.title_es,
+          category_en: data.category_en,
+          category_es: data.category_es,
+          description_en: data.description_en,
+          description_es: data.description_es,
+          body_en: data.body_en,
+          body_es: data.body_es,
+          image_url: data.image_url,
+          video_url: data.video_url,
+          gallery_url_1: data.gallery_url_1,
+          gallery_url_2: data.gallery_url_2,
+          "order": data.order || 0
+        };
+
+        if (isUUID(highlightDataToSave.id)) {
           const { error } = await supabase.from('highlights').update(highlightDataToSave).eq('id', highlightDataToSave.id);
           if (error) throw error;
         } else {
@@ -580,14 +606,16 @@ export default function Dashboard() {
   const deleteProject = async (id: string) => {
     if (confirm('¿Eliminar proyecto?')) {
       try {
-        const { error, data } = await supabase.from('projects').delete().eq('id', id).select();
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-           toast.error('No se pudo eliminar', { 
-             description: 'Es posible que las políticas de seguridad (RLS) en Supabase estén bloqueando la acción de "Delete".' 
-           });
-           return;
+        if (isUUID(id)) {
+          const { error, data } = await supabase.from('projects').delete().eq('id', id).select();
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+             toast.error('No se pudo eliminar', { 
+               description: 'Es posible que las políticas de seguridad (RLS) en Supabase estén bloqueando la acción de "Delete".' 
+             });
+             return;
+          }
         }
 
         toast.success('Proyecto eliminado');
@@ -606,14 +634,16 @@ export default function Dashboard() {
 
   const deleteMember = async (id: string) => {
     try {
-      const { error, data } = await supabase.from('team_members').delete().eq('id', id).select();
-      if (error) throw error;
+      if (isUUID(id)) {
+        const { error, data } = await supabase.from('team_members').delete().eq('id', id).select();
+        if (error) throw error;
 
-      if (!data || data.length === 0) {
-         toast.error('No se pudo eliminar', { 
-           description: 'Revisa las políticas RLS de Supabase. La base de datos no permitió borrar el elemento.' 
-         });
-         return;
+        if (!data || data.length === 0) {
+           toast.error('No se pudo eliminar', { 
+             description: 'Revisa las políticas RLS de Supabase. La base de datos no permitió borrar el elemento.' 
+           });
+           return;
+        }
       }
 
       toast.success('Miembro eliminado');
@@ -1800,7 +1830,9 @@ export default function Dashboard() {
                             onClick={async () => {
                               if (confirm('¿Estás seguro de que deseas eliminar este highlight?')) {
                                 try {
-                                  await supabase.from('highlights').delete().eq('id', h.id);
+                                  if (isUUID(h.id)) {
+                                    await supabase.from('highlights').delete().eq('id', h.id);
+                                  }
                                   await fetchData();
                                   toast.success('Highlight eliminado');
                                 } catch (e) {
