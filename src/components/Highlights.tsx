@@ -25,6 +25,11 @@ export default function Highlights() {
     role: highlight.category_en || highlight.category || 'LOREM IPSUM ROLE',
     roleEs: highlight.category_es || highlight.category || 'LOREM IPSUM ROLE',
     image: highlight.image_url || highlight.image || '',
+    video_url: highlight.video_url || '',
+    gallery_url_1: highlight.gallery_url_1 || '',
+    gallery_url_2: highlight.gallery_url_2 || '',
+    body_en: highlight.body_en || highlight.body || '',
+    body_es: highlight.body_es || '',
     description: highlight.description_en || highlight.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
     descriptionEs: highlight.description_es || highlight.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
     projectRef: highlight
@@ -261,10 +266,18 @@ export default function Highlights() {
               </span>
             </button>
 
-            {/* Left Side: Main Visual */}
             <div className="w-full md:w-[45%] h-[30vh] md:h-full relative overflow-hidden group shrink-0">
               <Editable section="highlights" element="image" projectId={selectedItem.id} className="w-full h-full block">
-                {selectedItem.image ? (
+                {selectedItem.video_url ? (
+                  <video 
+                    src={selectedItem.video_url}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : selectedItem.image ? (
                   <motion.img 
                     layoutId={`project-image-${selectedItem.id}`}
                     src={selectedItem.image} 
@@ -279,12 +292,14 @@ export default function Highlights() {
                 )}
               </Editable>
               <div className="absolute inset-0 bg-black/20" />
-              {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-500">
-                  <div className="w-0 h-0 border-t-[6px] md:border-t-[8px] border-t-transparent border-l-[12px] md:border-l-[14px] border-l-white border-b-[6px] md:border-b-[8px] border-b-transparent ml-1" />
+              {/* Play Button Overlay (Only if not video or to suggest video) */}
+              {!selectedItem.video_url && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-0 h-0 border-t-[6px] md:border-t-[8px] border-t-transparent border-l-[12px] md:border-l-[14px] border-l-white border-b-[6px] md:border-b-[8px] border-b-transparent ml-1" />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Right Side: Content */}
@@ -329,22 +344,36 @@ export default function Highlights() {
                       {language === 'en' ? selectedItem.description : selectedItem.descriptionEs}
                     </p>
                   </Editable>
-                  <p>
-                    {language === 'en' 
-                      ? "Our architects, engineers, and construction professionals work as a single, integrated unit. This cohesion allows us to translate ambitious concepts into built realities, ensuring that every decision — from structural systems to material selection — is aligned with the project's broader vision and long-term durability."
-                      : "Nuestros arquitectos, ingenieros y profesionales de la construcción trabajan como una unidad única e integrada. Esta cohesión nos permite traducir conceptos ambiciosos en realidades construidas, asegurando que cada decisión, desde los sistemas estructurales hasta la selección de materiales, esté alineada con la visión más amplia y la durabilidad a largo plazo del proyecto."
-                    }
-                  </p>
+                  <Editable section="highlights" element="body" projectId={selectedItem.id}>
+                    <p>
+                      {language === 'en' 
+                        ? (selectedItem.body_en || selectedItem.body || "Our architects, engineers, and construction professionals work as a single, integrated unit. This cohesion allows us to translate ambitious concepts into built realities, ensuring that every decision — from structural systems to material selection — is aligned with the project's broader vision and long-term durability.")
+                        : (selectedItem.body_es || "Nuestros arquitectos, ingenieros y profesionales de la construcción trabajan como una unidad única e integrada. Esta cohesión nos permite traducir conceptos ambiciosos en realidades construidas, asegurando que cada decisión, desde los sistemas estructurales hasta la selección de materiales, esté alineada con la visión más amplia y la durabilidad a largo plazo del proyecto.")
+                      }
+                    </p>
+                  </Editable>
                 </div>
 
                 {/* Mini Gallery - Hidden on very small screens to save space, or adjusted */}
                 <div className="mt-auto grid grid-cols-2 gap-3 shrink-0 pb-4 md:pb-0">
-                  <div className="aspect-video rounded-lg md:rounded-xl overflow-hidden border border-white/5">
-                    <img src={selectedItem.image} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Gallery 1" referrerPolicy="no-referrer" />
-                  </div>
-                  <div className="aspect-video rounded-lg md:rounded-xl overflow-hidden border border-white/5">
-                    <img src={selectedItem.image} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Gallery 2" referrerPolicy="no-referrer" />
-                  </div>
+                  <Editable section="highlights" element="image" projectId={selectedItem.id} className="w-full h-full block">
+                    <div className="aspect-video rounded-lg md:rounded-xl overflow-hidden border border-white/5 bg-[#111]">
+                      {selectedItem.gallery_url_1 ? (
+                        <img src={selectedItem.gallery_url_1} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Gallery 1" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center opacity-30 text-[8px] uppercase tracking-widest">Sin Imagen</div>
+                      )}
+                    </div>
+                  </Editable>
+                  <Editable section="highlights" element="image" projectId={selectedItem.id} className="w-full h-full block">
+                    <div className="aspect-video rounded-lg md:rounded-xl overflow-hidden border border-white/5 bg-[#111]">
+                      {selectedItem.gallery_url_2 ? (
+                        <img src={selectedItem.gallery_url_2} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Gallery 2" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center opacity-30 text-[8px] uppercase tracking-widest">Sin Imagen</div>
+                      )}
+                    </div>
+                  </Editable>
                 </div>
               </div>
             </div>

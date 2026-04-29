@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video, Play } from 'lucide-react';
+import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video, Play, Film } from 'lucide-react';
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
 import { defaultSettings } from '../contexts/SiteContext';
@@ -28,7 +28,12 @@ export default function Dashboard() {
       category_es: 'LOREM IPSUM ROLE', 
       description_en: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', 
       description_es: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      image_url: '' 
+      body_en: "Our architects, engineers, and construction professionals work as a single, integrated unit. This cohesion allows us to translate ambitious concepts into built realities, ensuring that every decision — from structural systems to material selection — is aligned with the project's broader vision and long-term durability.",
+      body_es: "Nuestros arquitectos, ingenieros y profesionales de la construcción trabajan como una unidad única e integrada. Esta cohesión nos permite traducir conceptos ambiciosos en realidades construidas, asegurando que cada decisión, desde los sistemas estructurales hasta la selección de materiales, esté alineada con la visión más amplia y la durabilidad a largo plazo del proyecto.",
+      image_url: '',
+      video_url: '',
+      gallery_url_1: '',
+      gallery_url_2: '' 
     },
     { 
       id: 2, 
@@ -38,7 +43,12 @@ export default function Dashboard() {
       category_es: 'LOREM IPSUM ROLE 2', 
       description_en: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', 
       description_es: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      image_url: '' 
+      body_en: "Our architects, engineers, and construction professionals work as a single, integrated unit. This cohesion allows us to translate ambitious concepts into built realities, ensuring that every decision — from structural systems to material selection — is aligned with the project's broader vision and long-term durability.",
+      body_es: "Nuestros arquitectos, ingenieros y profesionales de la construcción trabajan como una unidad única e integrada. Esta cohesión nos permite traducir conceptos ambiciosos en realidades construidas, asegurando que cada decisión, desde los sistemas estructurales hasta la selección de materiales, esté alineada con la visión más amplia y la durabilidad a largo plazo del proyecto.",
+      image_url: '',
+      video_url: '',
+      gallery_url_1: '',
+      gallery_url_2: '' 
     }
   ];
 
@@ -143,7 +153,21 @@ export default function Dashboard() {
         } else if (section === 'highlights' || element === 'new_highlight') {
           setActiveTab('highlights');
           if (element === 'new_highlight') {
-            setEditingHighlight({ id: null, title_en: '', title_es: '', category_en: '', category_es: '', description_en: '', description_es: '', image_url: '' });
+            setEditingHighlight({ 
+              id: null, 
+              title_en: '', 
+              title_es: '', 
+              category_en: '', 
+              category_es: '', 
+              description_en: '', 
+              description_es: '', 
+              body_en: '', 
+              body_es: '', 
+              image_url: '',
+              video_url: '',
+              gallery_url_1: '',
+              gallery_url_2: ''
+            });
           } else if (projectId) {
             const highlightIdStr = String(projectId);
             const hig = highlightsRef.current.find(h => String(h.id) === highlightIdStr);
@@ -501,7 +525,7 @@ export default function Dashboard() {
           return;
         }
 
-        const { image, title, titleEs, category, categoryEs, description, descriptionEs, ...highlightDataToSave } = editingHighlight;
+        const { image, title, titleEs, category, categoryEs, description, descriptionEs, body, role, ...highlightDataToSave } = editingHighlight;
 
         if (highlightDataToSave.id !== undefined && highlightDataToSave.id !== null) {
           const { error } = await supabase.from('highlights').update(highlightDataToSave).eq('id', highlightDataToSave.id);
@@ -666,9 +690,10 @@ export default function Dashboard() {
                       activeEditor.section === 'home' ? 'Título Principal' : 
                       activeEditor.section === 'contact' ? 'Título Contacto' : 
                       activeEditor.section === 'team' ? 'Título Equipo' : 
-                      activeEditor.section === 'highlights' ? (activeEditor.projectId ? 'Título del Highlight' : 'Título de Highlights') :
+                      activeEditor.section === 'highlights' ? (activeEditor.projectId ? (activeEditor.element === 'body' ? 'Cuerpo del Highlight' : 'Título del Highlight') : 'Título de Highlights') :
                       'Título del Proyecto'
                     ) :
+                    activeEditor.element === 'body' ? 'Cuerpo del Highlight' :
                     activeEditor.element === 'subtitle' ? (activeEditor.section === 'home' ? 'Subtítulo Principal' : activeEditor.section === 'contact' ? 'Subtítulo Contacto' : activeEditor.section === 'team' ? 'Subtítulo Equipo' : 'Subtítulo del Proyecto') :
                     activeEditor.element === 'buttons' ? 'Botones de Servicios' :
                     activeEditor.element === 'stats' ? 'Estadísticas de Servicios' :
@@ -819,39 +844,119 @@ export default function Dashboard() {
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <h3 className="text-[10px] uppercase tracking-widest text-white/30 border-b border-white/10 pb-2">Edición: {editingHighlight.title_es || editingHighlight.title || 'Highlight'}</h3>
                   
-                  {/* Image Edit */}
+                  {/* Image & Video Edit */}
                   {(activeEditor.element === 'image' || activeEditor.element === 'highlight') && (
-                    <div className="space-y-3">
-                      <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Imagen del Highlight</label>
+                    <div className="space-y-6">
                       <div className="space-y-3">
-                        <div 
-                          onClick={() => document.getElementById('quick-highlight-upload')?.click()}
-                          className="w-full h-48 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer shadow-2xl"
-                        >
-                          {(editingHighlight.image_url || editingHighlight.image) ? (
-                            <>
-                              <img src={editingHighlight.image_url || editingHighlight.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-[10px] uppercase tracking-widest bg-black/60 text-white px-4 py-2 rounded group-hover:bg-white group-hover:text-black transition-all font-bold">Cambiar Imagen</span>
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold text-blue-400">Imagen de Portada (JPG/PNG)</label>
+                        <div className="space-y-3">
+                          <div 
+                            onClick={() => document.getElementById('quick-highlight-upload')?.click()}
+                            className="w-full h-48 bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer shadow-2xl"
+                          >
+                            {(editingHighlight.image_url || editingHighlight.image) ? (
+                              <>
+                                <img src={editingHighlight.image_url || editingHighlight.image} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="Preview" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-[10px] uppercase tracking-widest bg-black/60 text-white px-4 py-2 rounded group-hover:bg-white group-hover:text-black transition-all font-bold">Cambiar Imagen</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 border border-dashed border-white/10">
+                                <Plus size={24} className="mb-2" />
+                                <span className="text-[10px] uppercase tracking-widest">Subir Imagen</span>
                               </div>
-                            </>
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 border border-dashed border-white/10">
-                              <Plus size={24} className="mb-2" />
-                              <span className="text-[10px] uppercase tracking-widest">Subir Imagen</span>
-                            </div>
-                          )}
+                            )}
+                          </div>
+                          <input 
+                            id="quick-highlight-upload"
+                            type="file" 
+                            accept="image/*"
+                            onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, image_url: url, image: url}))}
+                            disabled={isUploading}
+                            className="hidden" 
+                          />
                         </div>
-                        <input 
-                          id="quick-highlight-upload"
-                          type="file" 
-                          accept="image/*"
-                          onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, image_url: url, image: url}))}
-                          disabled={isUploading}
-                          className="hidden" 
-                        />
-                        {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest italic">Subiendo archivo...</p>}
                       </div>
+
+                      <div className="space-y-3 pt-4 border-t border-white/5">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold text-blue-400">Video Principal (MP4)</label>
+                        <div className="space-y-3">
+                          <div 
+                            onClick={() => document.getElementById('quick-highlight-video-upload')?.click()}
+                            className="w-full h-32 bg-black border border-white/10 rounded flex flex-col items-center justify-center relative group cursor-pointer"
+                          >
+                            {editingHighlight.video_url ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Film size={20} className="text-emerald-500" />
+                                <span className="text-[8px] text-gray-400 uppercase tracking-widest">Video Cargado</span>
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                  <span className="text-[10px] uppercase tracking-widest text-white font-bold">Cambiar Video</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <Film size={24} className="mb-2 text-gray-600" />
+                                <span className="text-[10px] uppercase tracking-widest text-gray-600">Subir Video</span>
+                              </>
+                            )}
+                          </div>
+                          <input 
+                            id="quick-highlight-video-upload"
+                            type="file" 
+                            accept="video/*"
+                            onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, video_url: url}))}
+                            disabled={isUploading}
+                            className="hidden" 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gallery Images */}
+                      <div className="pt-4 border-t border-white/5 space-y-4">
+                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold text-blue-400">Mini Galería</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Gallery 1 */}
+                          <div className="space-y-2">
+                            <div 
+                              onClick={() => document.getElementById('high-gal-1')?.click()}
+                              className="aspect-square bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
+                            >
+                              {editingHighlight.gallery_url_1 ? (
+                                <img src={editingHighlight.gallery_url_1} className="w-full h-full object-cover opacity-50" alt="Gal 1" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center"><Plus size={16} /></div>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <span className="text-[8px] font-bold text-white uppercase">Upload</span>
+                              </div>
+                            </div>
+                            <input id="high-gal-1" type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, gallery_url_1: url}))} />
+                            <p className="text-[8px] text-center text-gray-600 uppercase tracking-widest">Imagen 1</p>
+                          </div>
+
+                          {/* Gallery 2 */}
+                          <div className="space-y-2">
+                            <div 
+                              onClick={() => document.getElementById('high-gal-2')?.click()}
+                              className="aspect-square bg-black border border-white/10 rounded overflow-hidden relative group cursor-pointer"
+                            >
+                              {editingHighlight.gallery_url_2 ? (
+                                <img src={editingHighlight.gallery_url_2} className="w-full h-full object-cover opacity-50" alt="Gal 2" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center"><Plus size={16} /></div>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <span className="text-[8px] font-bold text-white uppercase">Upload</span>
+                              </div>
+                            </div>
+                            <input id="high-gal-2" type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, url => setEditingHighlight({...editingHighlight, gallery_url_2: url}))} />
+                            <p className="text-[8px] text-center text-gray-600 uppercase tracking-widest">Imagen 2</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isUploading && <p className="text-[10px] text-emerald-500 animate-pulse uppercase tracking-widest italic">Subiendo archivo...</p>}
                     </div>
                   )}
 
@@ -889,6 +994,18 @@ export default function Dashboard() {
                         <div>
                           <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Descripción (EN)</label>
                           <textarea value={editingHighlight.description_en || editingHighlight.description || ''} onChange={e=>setEditingHighlight({...editingHighlight, description_en: e.target.value, description: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-24 resize-none" />
+                        </div>
+                      </div>
+                    )}
+                    {(activeEditor.element === 'body' || activeEditor.element === 'highlight') && (
+                      <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Cuerpo / Texto Secundario (ES)</label>
+                          <textarea value={editingHighlight.body_es || ''} onChange={e=>setEditingHighlight({...editingHighlight, body_es: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-32 resize-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold text-blue-400">Cuerpo / Texto Secundario (EN)</label>
+                          <textarea value={editingHighlight.body_en || editingHighlight.body || ''} onChange={e=>setEditingHighlight({...editingHighlight, body_en: e.target.value, body: e.target.value})} className="w-full bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-white/30 h-32 resize-none" />
                         </div>
                       </div>
                     )}
