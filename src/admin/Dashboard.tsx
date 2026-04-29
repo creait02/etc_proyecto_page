@@ -111,7 +111,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-  }, []); // Only fetch on mount
+
+    // Subscribe to real-time changes to keep the dashboard state updated if other users make changes
+    const channels = [
+      supabase.channel('dashboard_settings').on('postgres_changes', { event: '*', table: 'site_settings', schema: 'public' }, () => fetchData()),
+      supabase.channel('dashboard_projects').on('postgres_changes', { event: '*', table: 'projects', schema: 'public' }, () => fetchData()),
+      supabase.channel('dashboard_team').on('postgres_changes', { event: '*', table: 'team_members', schema: 'public' }, () => fetchData()),
+      supabase.channel('dashboard_highlights').on('postgres_changes', { event: '*', table: 'highlights', schema: 'public' }, () => fetchData())
+    ];
+
+    channels.forEach(channel => channel.subscribe());
+
+    return () => {
+      channels.forEach(channel => supabase.removeChannel(channel));
+    };
+  }, []); // Only subscribe on mount
 
   useEffect(() => {
     // Listen for messages from the iframe
@@ -233,7 +247,13 @@ export default function Dashboard() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const fetchData = async () => {
+  const hasChangesRef = useRef(false);
+
+  useEffect(() => {
+    hasChangesRef.current = hasChanges;
+  }, [hasChanges]);
+
+  const fetchData = async (retryCount = 0) => {
     try {
       const [setRes, projRes, teamRes, highRes, usersRes] = await Promise.all([
         supabase.from('site_settings').select('*').single(),
@@ -243,8 +263,16 @@ export default function Dashboard() {
         supabase.from('allowed_users').select('*').order('created_at', { ascending: false })
       ]);
       
+      const errors = [setRes.error, projRes.error, teamRes.error, highRes.error, usersRes.error].filter(Boolean);
+      const isLockError = errors.some(e => e?.message?.includes('lock') || e?.message?.includes('stole'));
+
+      if (isLockError && retryCount < 3) {
+        const delay = (retryCount + 1) * 1000;
+        await new Promise(r => setTimeout(r, delay));
+        return fetchData(retryCount + 1);
+      }
+
       if (setRes.data) {
-        // More robust merge to prevent null values from overwriting defaults (like filters)
         const merged = { ...defaultSettings };
         Object.keys(setRes.data).forEach(key => {
           if (setRes.data[key] !== null && setRes.data[key] !== undefined) {
@@ -252,26 +280,27 @@ export default function Dashboard() {
           }
         });
         setOriginalSettings(merged);
-        setDraftSettings(merged);
+        
+        if (!hasChangesRef.current) {
+          setDraftSettings(merged);
+        }
       } else {
         setOriginalSettings(defaultSettings);
-        setDraftSettings(defaultSettings);
-      }
-      if (projRes.data && projRes.data.length > 0) {
-        setProjects(projRes.data);
-      } else {
-        setProjects(fallbackProjects);
-      }
-      if (teamRes.data && teamRes.data.length > 0) {
-        setTeamMembers(teamRes.data);
-      } else {
-        setTeamMembers(fallbackTeamMembers);
+        if (!hasChangesRef.current) setDraftSettings(defaultSettings);
       }
 
-      if (highRes.data && highRes.data.length > 0) {
-        setHighlights(highRes.data);
-      } else {
-        setHighlights(fallbackHighlights);
+      // Sync projects
+      if (projRes.data) {
+        setProjects(projRes.data.length > 0 ? projRes.data : fallbackProjects);
+      }
+
+      // Sync team members - PRIORITY
+      if (teamRes.data) {
+        setTeamMembers(teamRes.data.length > 0 ? teamRes.data : fallbackTeamMembers);
+      }
+
+      if (highRes.data) {
+        setHighlights(highRes.data.length > 0 ? highRes.data : fallbackHighlights);
       }
 
       if (usersRes.data) {

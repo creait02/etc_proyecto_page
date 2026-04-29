@@ -84,26 +84,37 @@ export default function AdminApp() {
           return;
         }
 
-        // Only get session if we don't have one to prevent lock stealing
+        // Only fetch session if we don't have one to avoid lock contention
         if (!session) {
-          const { data: { session: currentSession } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
-          if (currentSession) {
-            const currentEmail = currentSession.user.email?.toLowerCase().trim();
-            if (cachedAllowedEmail === currentEmail) {
-              setSession(currentSession);
-              setIsAllowed(true);
-              setLoading(false);
-            } else {
-              const { allowed, error } = await checkUserAccess(currentEmail || '');
-              if (!error) {
+          // Wrap in a try-catch that specifically looks for lock errors
+          try {
+            const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+            
+            if (sessionError) throw sessionError;
+
+            if (currentSession) {
+              const currentEmail = currentSession.user.email?.toLowerCase().trim();
+              if (cachedAllowedEmail === currentEmail) {
                 setSession(currentSession);
-                setIsAllowed(allowed);
+                setIsAllowed(true);
+              } else {
+                const { allowed, error } = await checkUserAccess(currentEmail || '');
+                if (!error) {
+                  setSession(currentSession);
+                  setIsAllowed(allowed);
+                }
               }
+            }
+          } catch (e: any) {
+            if (e.message?.includes('lock') || e.message?.includes('stole')) {
+              console.warn("Auth lock detected during init, will retry via onAuthStateChange events.");
+            } else {
+              console.error("Auth session error:", e);
             }
           }
         }
       } catch (err) {
-        console.error("Auth init error:", err);
+        console.error("Auth init fatal error:", err);
       } finally {
         setLoading(false);
         setVerifying(false);
@@ -114,11 +125,15 @@ export default function AdminApp() {
     initAuth();
 
     // Listen for auth changes but avoid redundant state updates
+    let isProcessingAuthChange = false;
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth event:", event);
 
+      if (isProcessingAuthChange) return;
+      
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAllowed(false);
@@ -126,22 +141,28 @@ export default function AdminApp() {
         setLoading(false);
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         if (session) {
+          isProcessingAuthChange = true;
           setSession(session);
           
           // Only check access if email changed or we don't have it allowed yet
           const currentEmail = session.user.email?.toLowerCase().trim();
           if (cachedAllowedEmail !== currentEmail) {
-            const { allowed, error } = await checkUserAccess(currentEmail || '');
-            if (!error) {
-              setIsAllowed(allowed);
-              if (!allowed && event === 'SIGNED_IN') {
-                toast.error("No tienes acceso autorizado.");
-                await supabase.auth.signOut().catch(() => {});
+            try {
+              const { allowed, error } = await checkUserAccess(currentEmail || '');
+              if (!error) {
+                setIsAllowed(allowed);
+                if (!allowed && event === 'SIGNED_IN') {
+                  toast.error("No tienes acceso autorizado.");
+                  await supabase.auth.signOut().catch(() => {});
+                }
               }
+            } finally {
+              isProcessingAuthChange = false;
             }
           } else {
             // If already cached, just ensure we are allowed
             setIsAllowed(true);
+            isProcessingAuthChange = false;
           }
           setLoading(false);
         }

@@ -3,12 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://pkijakomomhjlvybhohz.supabase.co';
 const supabaseKey = 'sb_publishable_QnjAaHb93-ugCYU8vLjb_g_s95FCSBz';
 
-// Check if URL is a placeholder
-if (supabaseUrl.includes('pkijakomomhjlvybhohz')) {
-  console.warn('AVISO: Estás usando una URL de Supabase de ejemplo. Para que el CMS funcione correctamente, debes configurar tu propia instancia de Supabase en src/lib/supabase.ts');
-}
+// Detect if we are in a preview iframe to avoid auth lock contention with the admin parent
+const isIframe = typeof window !== 'undefined' && window.parent !== window;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: !isIframe, // Only persist session if NOT in an iframe
+    autoRefreshToken: !isIframe,
+    detectSessionInUrl: !isIframe,
+    // Use a different storage key for iframes to prevent "stole it" errors
+    storageKey: isIframe ? 'sb-preview-token' : undefined
+  }
+});
 
 // Global listener to handle invalid refresh tokens and clear them automatically
 supabase.auth.onAuthStateChange((event, session) => {

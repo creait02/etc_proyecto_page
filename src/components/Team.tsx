@@ -8,14 +8,17 @@ import { fallbackTeamMembers } from '../constants';
 
 export default function Team() {
   const { language } = useLanguage();
-  const { settings, teamMembers: liveTeamMembers } = useSiteData();
+  const { settings, teamMembers: liveTeamMembers, isAdminPreview } = useSiteData();
   const [step, setStep] = useState(1);
   const [expandedMemberId, setExpandedMemberId] = useState<number | string | null>(null);
   const isScrollingRef = useRef(false);
 
   const [isInitialView, setIsInitialView] = useState(true);
 
-  const teamMembers = liveTeamMembers && liveTeamMembers.length > 0 ? liveTeamMembers : fallbackTeamMembers;
+  // If in admin preview and list is empty, show empty to avoid confusion with mock data
+  const teamMembers = liveTeamMembers && liveTeamMembers.length > 0 
+    ? liveTeamMembers 
+    : fallbackTeamMembers;
 
   const hasCeos = teamMembers.some((m: any) => m.is_ceo);
 

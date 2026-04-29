@@ -105,7 +105,8 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Check if we are inside the CMS preview iframe
     const urlParams = new URLSearchParams(window.location.search);
-    setIsAdminPreview(urlParams.get('admin_preview') === 'true');
+    const isDraftMode = urlParams.get('admin_preview') === 'true';
+    setIsAdminPreview(isDraftMode);
 
     // 1. Fetch initial data from Supabase
     const fetchData = async () => {
@@ -125,21 +126,17 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
             }
           });
           setSettings(merged);
-        } else {
-          console.warn('No site settings found in Supabase, using defaults.');
         }
 
         if (projRes.data && projRes.data.length > 0) {
           setProjects(projRes.data);
         } else {
-          console.warn('No projects found in Supabase, using mock data.');
           setProjects(mockProjects);
         }
 
         if (teamRes.data && teamRes.data.length > 0) {
           setTeamMembers(teamRes.data);
         } else {
-          console.warn('No team members found in Supabase.');
           setTeamMembers(fallbackTeamMembers);
         }
 
@@ -149,19 +146,26 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
           setHighlights([]);
         }
       } catch (error: any) {
-        if (error.message === 'Failed to fetch') {
-          console.warn('Error de conexión con Supabase (Failed to fetch). Usando datos de respaldo.');
-        } else {
-          console.error('Error fetching site data from Supabase:', error);
-        }
-        // Fallback is already set via initial state
+        console.error('Error fetching site data:', error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
 
-    // 2. Listen for Live Preview messages from the CMS iframe
+    // 2. Real-time Subscriptions for ALL tables
+    // This ensures that when any user saves changes, all other open clients (visitors and admins) see them immediately
+    const channels = [
+      supabase.channel('site_settings_changes').on('postgres_changes', { event: '*', table: 'site_settings', schema: 'public' }, () => fetchData()),
+      supabase.channel('projects_changes').on('postgres_changes', { event: '*', table: 'projects', schema: 'public' }, () => fetchData()),
+      supabase.channel('team_members_changes').on('postgres_changes', { event: '*', table: 'team_members', schema: 'public' }, () => fetchData()),
+      supabase.channel('highlights_changes').on('postgres_changes', { event: '*', table: 'highlights', schema: 'public' }, () => fetchData())
+    ];
+
+    channels.forEach(channel => channel.subscribe());
+
+    // 3. Listen for Live Preview messages from the CMS iframe (for pending unsaved changes)
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'PREVIEW_UPDATE') {
         if (event.data.payload.settings) {
@@ -179,7 +183,11 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      channels.forEach(channel => supabase.removeChannel(channel));
+    };
   }, []);
 
   return (
