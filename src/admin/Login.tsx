@@ -10,8 +10,23 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [resendTimer, setResendTimer] = useState(0);
+
+  const startResendTimer = () => {
+    setResendTimer(60);
+    const interval = setInterval(() => {
+      setResendTimer(current => {
+        if (current <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent | null) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
@@ -20,7 +35,9 @@ export default function Login() {
       const emailLower = email.toLowerCase().trim();
 
       // 1. Verificación previa en nuestra tabla de permitidos
-      if (emailLower !== 'it@corpocrea.com') {
+      const isAdminEmail = emailLower === 'it@corpocrea.com' || emailLower === 'j.montilla@corpocrea.com';
+      
+      if (!isAdminEmail) {
         const { data: allowed, error: checkError } = await supabase
           .from('allowed_users')
           .select('email')
@@ -38,7 +55,6 @@ export default function Login() {
       }
 
       // 2. Si está en la lista (o es IT), pedimos el OTP a Supabase
-      // Importante: shouldCreateUser debe ser true para que Supabase cree el usuario en auth.users si es la primera vez
       const { error } = await supabase.auth.signInWithOtp({ 
         email: emailLower,
         options: {
@@ -49,17 +65,24 @@ export default function Login() {
       if (error) {
         if (error.message === 'Signups not allowed for otp') {
           toast.error('Error de Supabase', {
-            description: 'Los registros están deshabilitados en el panel de Supabase. Debes activarlos para permitir nuevos usuarios.'
+            description: 'Los registros están deshabilitados. Actívalos en el panel de Auth de Supabase.'
+          });
+        } else if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('limit exceeded')) {
+          toast.error('Límite excedido', {
+            description: 'Has superado el límite de intentos. Por favor, intenta de nuevo en una hora.'
+          });
+        } else if (error.message.toLowerCase().includes('error sending magic link')) {
+          toast.error('Error SMTP', {
+            description: 'No se pudo enviar el correo. Revisa la configuración SMTP en Supabase.'
           });
         } else {
-          toast.error('Error de autenticación', {
-            description: error.message
-          });
+          toast.error('Error', { description: error.message });
         }
       } else {
         setStep('otp');
+        startResendTimer();
         toast.success('Código enviado', {
-          description: 'Se ha enviado un código de acceso a tu correo.'
+          description: `Se ha enviado un código a ${emailLower}.`
         });
       }
     } catch (err: any) {
@@ -78,42 +101,36 @@ export default function Login() {
     setError('');
     
     try {
+      const emailLower = email.toLowerCase().trim();
+
       // MOCK OTP FOR DEVELOPMENT/DEMO
-      // Si el código es 123456, permitimos el ingreso de demostración
       if (token === '123456') {
         console.warn('Ingresando con código de demostración.');
         localStorage.setItem('etc_demo_session', 'true');
-        // Forzamos un recargo o un cambio de estado que AdminApp detectará
         window.location.reload(); 
         return;
       }
 
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: emailLower,
+        token: token.trim(),
         type: 'email'
       });
 
       if (error) {
         toast.error('Código inválido', {
-          description: 'El código ingresado es incorrecto o ha expirado.'
+          description: 'El código es incorrecto o ha expirado. Asegúrate de copiar el código de 6 dígitos del correo.'
         });
-      } else {
+      } else if (data.session) {
         toast.success('¡Bienvenido!', {
-          description: 'Has ingresado correctamente al panel de administración.'
+          description: 'Acceso concedido.'
         });
       }
     } catch (err: any) {
       console.error('OTP Verify Error:', err);
-      if (err.message === 'Failed to fetch') {
-        toast.error('Error de conexión', {
-          description: 'No se pudo verificar el código. Revisa tu conexión.'
-        });
-      } else {
-        toast.error('Error de verificación', {
-          description: 'Ocurrió un error al intentar validar el código.'
-        });
-      }
+      toast.error('Error de verificación', {
+        description: 'Ocurrió un error inesperado. Intenta de nuevo.'
+      });
     } finally {
       setLoading(false);
     }
@@ -133,7 +150,7 @@ export default function Login() {
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
                 className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-white/30 outline-none transition-colors" 
-                placeholder="admin@etcproyecto.com"
+                placeholder="admin@corpocrea.com"
                 required 
               />
             </div>
@@ -147,39 +164,64 @@ export default function Login() {
             <p className="text-[10px] text-gray-500 text-center uppercase tracking-widest leading-relaxed">
               Recibirás un código de acceso único en tu correo electrónico.
               <br />
-              <span className="text-zinc-600 mt-1 block">(Modo Desarrollo: Usa el código 123456)</span>
+              <span className="text-zinc-600 mt-1 block">(Demo: usa 123456)</span>
             </p>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-6">
+            <div className="text-center mb-4">
+              <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Código enviado a</p>
+              <p className="text-[11px] text-white font-bold tracking-wider">{email}</p>
+            </div>
             <div>
-              <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Código de Acceso</label>
+              <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-2 text-center">Ingresa el código enviado</label>
               <input 
                 type="text" 
                 value={token} 
-                onChange={e => setToken(e.target.value)} 
-                className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-white/30 outline-none transition-colors text-center text-xl tracking-[0.5em]" 
-                placeholder="000000"
-                maxLength={6}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                  setToken(val);
+                }} 
+                className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-white/30 outline-none transition-colors text-center text-3xl font-light tracking-[0.3em]" 
+                placeholder="00000000"
+                maxLength={8}
                 required 
+                autoFocus
               />
             </div>
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full bg-white text-black font-medium uppercase tracking-widest text-xs py-4 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 mt-4"
-            >
-              {loading ? 'Verificando...' : 'Verificar e Ingresar'}
-            </button>
-            <button 
-              type="button"
-              onClick={() => setStep('email')}
-              className="w-full text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
-            >
-              Volver a ingresar email
-            </button>
-            <p className="text-[9px] text-zinc-600 text-center uppercase tracking-widest mt-4">
-              ¿No recibes el código? Usa 123456 para demostración.
+            <div className="space-y-3">
+              <button 
+                type="submit" 
+                disabled={loading || token.length < 6} 
+                className="w-full bg-white text-black font-medium uppercase tracking-widest text-xs py-4 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Verificando...' : 'Ingresar'}
+              </button>
+              
+              <div className="flex flex-col gap-3 pt-2">
+                <button 
+                  type="button"
+                  disabled={resendTimer > 0 || loading}
+                  onClick={() => handleRequestOtp(null)}
+                  className="w-full text-[10px] uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors disabled:text-zinc-600"
+                >
+                  {resendTimer > 0 ? `Reenviar código en ${resendTimer}s` : 'Reenviar código'}
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setStep('email');
+                    setToken('');
+                  }}
+                  className="w-full text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                >
+                  Cambiar email
+                </button>
+              </div>
+            </div>
+            <p className="text-[8px] text-zinc-700 text-center uppercase tracking-[0.2em] mt-4">
+              Revisa tu carpeta de SPAM si no llega el código.
             </p>
           </form>
         )}

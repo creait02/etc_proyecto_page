@@ -6,10 +6,10 @@ import { fallbackTeamMembers } from '../constants';
 import { defaultSettings } from '../contexts/SiteContext';
 import { projects as fallbackProjects } from '../data/mockData';
 
-export default function Dashboard() {
+export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: string | null }) {
   const [activeTab, setActiveTab] = useState('home');
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(propUserEmail || null);
 
   // Settings State
   const [originalSettings, setOriginalSettings] = useState<any>({});
@@ -68,10 +68,24 @@ export default function Dashboard() {
   }, [highlights]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserEmail(session?.user?.email || null);
+    if (propUserEmail) {
+      setUserEmail(propUserEmail);
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user?.email) {
+          setUserEmail(session.user.email);
+        }
+      });
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+      }
     });
-  }, []);
+
+    return () => subscription.unsubscribe();
+  }, [propUserEmail]);
 
   // Team State
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -820,14 +834,14 @@ export default function Dashboard() {
             </button>
 
             {/* Special Section for Admin Access */}
-            {userEmail?.toLowerCase() === 'it@corpocrea.com' && (
-              <div className="pt-4 mt-4 border-t border-white/5">
-                <p className="px-4 text-[8px] uppercase tracking-[0.3em] text-blue-400 font-black mb-2">Administración</p>
+            {(userEmail?.toLowerCase().trim() === 'it@corpocrea.com' || userEmail?.toLowerCase().trim() === 'j.montilla@corpocrea.com') && (
+              <div className="pt-4 mt-4 border-t border-white/5 space-y-1">
+                <p className="px-4 text-[8px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-2">Administración</p>
                 <button 
                   onClick={() => setActiveTab('access')} 
-                  className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'access' ? 'bg-blue-500 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-500/10'}`}
+                  className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-400/30' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
                 >
-                  <Shield size={14}/> Gestionar Accesos
+                  <Shield size={14}/> Gestionar Usuarios
                 </button>
               </div>
             )}
@@ -2273,12 +2287,15 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'access' && userEmail?.toLowerCase() === 'it@corpocrea.com' && (
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'access' && (userEmail?.toLowerCase().trim() === 'it@corpocrea.com' || userEmail?.toLowerCase().trim() === 'j.montilla@corpocrea.com') && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
               <div className="space-y-4">
-                <h3 className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold">Gestión de Accesos (IT)</h3>
-                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest">
-                  Controla quién tiene permitido entrar al gestor de contenido.
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield size={16} className="text-blue-400" />
+                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-blue-400 font-bold">Panel de Seguridad e IT</h3>
+                </div>
+                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest border-l-2 border-blue-500/30 pl-4">
+                  Como administrador Maestro, puedes autorizar nuevos correos para que accedan al CMS con permisos de edición.
                 </p>
               </div>
 
@@ -2317,9 +2334,9 @@ export default function Dashboard() {
                     <div key={u.id} className="flex items-center justify-between p-3 bg-black/40 border border-white/5 rounded-lg group hover:border-white/20 transition-all">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-white font-bold tracking-widest uppercase">{u.email}</span>
-                        <span className="text-[8px] text-gray-500 uppercase tracking-widest">{u.name || (u.email === 'it@corpocrea.com' ? 'Super Admin' : 'Editor')}</span>
+                        <span className="text-[8px] text-gray-500 uppercase tracking-widest">{u.name || (u.email === 'it@corpocrea.com' || u.email === 'j.montilla@corpocrea.com' ? 'Super Admin' : 'Editor')}</span>
                       </div>
-                      {u.email !== 'it@corpocrea.com' && (
+                      {(u.email !== 'it@corpocrea.com' && u.email !== 'j.montilla@corpocrea.com') && (
                         <button 
                           onClick={() => removeAllowedUser(u.id)}
                           className="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"

@@ -24,7 +24,8 @@ export default function AdminApp() {
     }
     
     // IT email is hardcoded as admin - ALWAYS ALLOWED
-    if (email === 'it@corpocrea.com') {
+    const isAdminEmail = email === 'it@corpocrea.com' || email === 'j.montilla@corpocrea.com';
+    if (isAdminEmail) {
       setCachedAllowedEmail(email);
       return { allowed: true, error: false };
     }
@@ -180,5 +181,5 @@ export default function AdminApp() {
     );
   }
 
-  return (session && isAllowed) ? <Dashboard /> : <Login />;
+  return (session && isAllowed) ? <Dashboard userEmail={session.user.email} /> : <Login />;
 }
