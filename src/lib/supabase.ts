@@ -8,11 +8,12 @@ const isIframe = typeof window !== 'undefined' && window.parent !== window;
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    persistSession: !isIframe, // Only persist session if NOT in an iframe
-    autoRefreshToken: !isIframe,
-    detectSessionInUrl: !isIframe,
-    // Use a different storage key for iframes to prevent "stole it" errors
-    storageKey: isIframe ? 'sb-preview-token' : undefined
+    persistSession: true, // Permitimos persistencia
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Usamos una clave diferente SIEMPRE que estemos en un iframe
+    // Esto evita el error "stole it" porque son dos almacenamientos aislados
+    storageKey: isIframe ? 'sb-etc-preview-token' : 'sb-etc-main-token'
   }
 });
 

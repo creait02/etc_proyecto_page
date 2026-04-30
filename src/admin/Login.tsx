@@ -55,12 +55,15 @@ export default function Login() {
       }
 
       // 2. Si está en la lista (o es IT), pedimos el OTP a Supabase
-      const { error } = await supabase.auth.signInWithOtp({ 
-        email: emailLower,
-        options: {
-          shouldCreateUser: true, 
-        }
-      });
+      const { error } = await Promise.race([
+        supabase.auth.signInWithOtp({ 
+          email: emailLower,
+          options: {
+            shouldCreateUser: true, 
+          }
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tiempo de espera agotado. Revisa tu conexión.")), 15000))
+      ]) as any;
 
       if (error) {
         if (error.message === 'Signups not allowed for otp') {

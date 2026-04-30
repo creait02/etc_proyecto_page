@@ -130,23 +130,26 @@ export default function AdminApp() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log("Auth event:", event);
 
       if (isProcessingAuthChange) return;
       
       if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setIsAllowed(false);
-        setCachedAllowedEmail(null);
-        setLoading(false);
+        // Double check session before signing out completely
+        const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+        if (!verifiedSession) {
+          setSession(null);
+          setIsAllowed(false);
+          setCachedAllowedEmail(null);
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-        if (session) {
+        if (currentSession) {
           isProcessingAuthChange = true;
-          setSession(session);
+          setSession(currentSession);
           
-          // Only check access if email changed or we don't have it allowed yet
-          const currentEmail = session.user.email?.toLowerCase().trim();
+          const currentEmail = currentSession.user.email?.toLowerCase().trim();
           if (cachedAllowedEmail !== currentEmail) {
             try {
               const { allowed, error } = await checkUserAccess(currentEmail || '');
@@ -161,7 +164,6 @@ export default function AdminApp() {
               isProcessingAuthChange = false;
             }
           } else {
-            // If already cached, just ensure we are allowed
             setIsAllowed(true);
             isProcessingAuthChange = false;
           }

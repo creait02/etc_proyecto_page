@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, Edit2, Users, Video, Play, Film, Shield } from 'lucide-react';
+import { 
+  LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, 
+  Edit2, Users, Video, Play, Film, Shield, Menu, ChevronLeft, ChevronRight 
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { fallbackTeamMembers } from '../constants';
 import { defaultSettings } from '../contexts/SiteContext';
@@ -8,6 +12,8 @@ import { projects as fallbackProjects } from '../data/mockData';
 
 export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: string | null }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isNavExpanded, setIsNavExpanded] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [userEmail, setUserEmail] = useState<string | null>(propUserEmail || null);
 
@@ -772,8 +778,13 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
     <div className="flex h-screen bg-zinc-950 text-white overflow-hidden font-sans">
       
       {/* LEFT SIDEBAR - CONTROLS */}
-      <div className="w-80 bg-zinc-900 border-r border-white/10 flex flex-col z-10 shadow-2xl">
-        {isDemo && (
+      <motion.div 
+        initial={false}
+        animate={{ width: isSidebarCollapsed ? 64 : 320 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="bg-zinc-900 border-r border-white/10 flex flex-col z-10 shadow-2xl relative"
+      >
+        {isDemo && !isSidebarCollapsed && (
           <div className="bg-amber-500/20 border-b border-amber-500/30 px-6 py-2">
             <p className="text-[9px] uppercase tracking-widest text-amber-500 font-bold text-center">
               Modo Demostración Activo
@@ -781,75 +792,162 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
           </div>
         )}
         {/* Header */}
-        <div className="h-14 px-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
-              <span className="text-black font-black text-[10px]">ETC</span>
+        <div className="h-14 px-4 border-b border-white/10 flex justify-between items-center bg-black/20">
+          <AnimatePresence mode="wait">
+            {!isSidebarCollapsed ? (
+              <motion.div 
+                key="logo"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-center gap-3 overflow-hidden whitespace-nowrap"
+              >
+                <div className="w-6 h-6 bg-white rounded-sm flex-none flex items-center justify-center">
+                  <span className="text-black font-black text-[10px]">ETC</span>
+                </div>
+                <span className="font-bold tracking-[0.2em] uppercase text-[10px]">CMS Panel</span>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="logo-small"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex-none w-full flex justify-center"
+              >
+                <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
+                  <span className="text-black font-black text-[10px]">E</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {!isSidebarCollapsed && (
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setIsSidebarCollapsed(true)} 
+                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/5 rounded transition-all group"
+                title="Contraer Lateral"
+              >
+                <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+              </button>
             </div>
-            <span className="font-bold tracking-[0.2em] uppercase text-[10px]">CMS Panel</span>
-          </div>
-          <button onClick={handleLogout} className="text-gray-500 hover:text-white transition-colors" title="Cerrar Sesión">
-            <LogOut size={14} />
-          </button>
+          )}
         </div>
 
+        {isSidebarCollapsed && (
+          <div className="py-4 border-b border-white/10 flex flex-col items-center gap-4">
+             <button 
+                onClick={() => setIsSidebarCollapsed(false)} 
+                className="p-2 text-gray-400 hover:text-white hover:bg-blue-500/10 hover:text-blue-400 rounded-full transition-all group"
+                title="Expandir Panel"
+              >
+                <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
+              <button 
+                onClick={handleLogout} 
+                className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all" 
+                title="Salir"
+              >
+                <LogOut size={16} />
+              </button>
+          </div>
+        )}
+
         {/* Vertical Navigation Menu */}
-        <div className="flex-none py-4 border-b border-white/10 bg-black/10">
-          <nav className="px-3 space-y-1">
+        <div className="flex-none bg-black/10">
+          <div 
+            className={`flex items-center justify-between px-4 py-3 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors group ${isSidebarCollapsed ? 'h-10' : ''}`}
+            onClick={() => !isSidebarCollapsed && setIsNavExpanded(!isNavExpanded)}
+          >
+            {!isSidebarCollapsed && <span className="text-[9px] uppercase tracking-[0.3em] text-zinc-500 font-bold group-hover:text-zinc-300">Menú de Navegación</span>}
+            {!isSidebarCollapsed && (
+              <motion.div animate={{ rotate: isNavExpanded ? 0 : -180 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}>
+                <ChevronLeft size={14} className="text-zinc-600 group-hover:text-zinc-400" />
+              </motion.div>
+            )}
+            {isSidebarCollapsed && <Menu size={14} className="mx-auto text-zinc-600" />}
+          </div>
+          
+          <motion.nav 
+            initial={false}
+            animate={{ 
+              height: !isSidebarCollapsed && !isNavExpanded ? 0 : 'auto',
+              opacity: !isSidebarCollapsed && !isNavExpanded ? 0 : 1
+            }}
+            className="px-2 py-2 space-y-1 overflow-hidden"
+          >
             <button 
               onClick={() => setActiveTab('home')} 
-              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
-              <Layout size={14}/> Inicio
+              <Layout size={16} className="flex-none"/>
+              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Inicio</span>}
             </button>
             <button 
               onClick={() => setActiveTab('projects')} 
-              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
-              <FolderKanban size={14}/> Proyectos
+              <FolderKanban size={16} className="flex-none"/>
+              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Proyectos</span>}
             </button>
             <button 
               onClick={() => setActiveTab('team')} 
-              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
-              <Users size={14}/> Equipo
+              <Users size={16} className="flex-none"/>
+              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Equipo</span>}
             </button>
             <button 
               onClick={() => setActiveTab('highlights')} 
-              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
-              <Layout size={14}/> Highlights
+              <Layout size={16} className="flex-none"/>
+              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Highlights</span>}
             </button>
             <button 
               onClick={() => setActiveTab('services')} 
-              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
-              <Layout size={14}/> Servicios
+              <Layout size={16} className="flex-none"/>
+              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Servicios</span>}
             </button>
             <button 
               onClick={() => setActiveTab('contact')} 
-              className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
-              <Phone size={14}/> Contacto
+              <Phone size={16} className="flex-none"/>
+              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Contacto</span>}
             </button>
 
             {/* Special Section for Admin Access */}
             {(userEmail?.toLowerCase().trim() === 'it@corpocrea.com' || userEmail?.toLowerCase().trim() === 'j.montilla@corpocrea.com') && (
-              <div className="pt-4 mt-4 border-t border-white/5 space-y-1">
-                <p className="px-4 text-[8px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-2">Administración</p>
+              <div className={`pt-2 mt-2 border-t border-white/5 ${isSidebarCollapsed ? 'flex flex-col items-center' : 'space-y-1'}`}>
+                {!isSidebarCollapsed && <p className="px-3 text-[7px] uppercase tracking-[0.2em] text-blue-400 font-bold mb-1">Admin</p>}
                 <button 
                   onClick={() => setActiveTab('access')} 
-                  className={`w-full px-4 py-2.5 rounded-md text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-400/30' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
+                  className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
+                  title={isSidebarCollapsed ? "Gestionar Usuarios" : undefined}
                 >
-                  <Shield size={14}/> Gestionar Usuarios
+                  <Shield size={16} className="flex-none"/>
+                  {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Usuarios</span>}
                 </button>
               </div>
             )}
-          </nav>
+          </motion.nav>
         </div>
 
-        {/* Form Area */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        {/* Form Area - ONLY VISIBLE IF NOT COLLAPSED OR IF EDITOR IS ACTIVE? */}
+        {/* Actually, the user might want the sidebar to COMPLETELY collapse the form too. */}
+        {/* But usually, sidebar means nav. If form area is also in sidebar, it should be hidden. */}
+        <AnimatePresence>
+          {!isSidebarCollapsed && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 overflow-y-auto p-6 custom-scrollbar"
+            >
           
           {activeEditor && (
             <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg animate-in fade-in slide-in-from-top-4">
@@ -2568,9 +2666,37 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
               )}
             </div>
           )}
+        </motion.div>
+      )}
+    </AnimatePresence>
 
-        </div>
-      </div>
+        {!isSidebarCollapsed && (
+          <div className="p-6 border-t border-white/10 bg-black/20">
+            {hasChanges ? (
+              <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4">
+                <button 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] active:scale-95 disabled:opacity-50"
+                >
+                  <Save size={16} /> {isSaving ? 'Guardando...' : 'Publicar Cambios'}
+                </button>
+                <button 
+                  onClick={handleDiscard} 
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-gray-300 py-3 rounded-lg text-[10px] uppercase tracking-widest transition-colors border border-white/5"
+                >
+                  Descartar
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-4 border border-dashed border-white/10 rounded-lg">
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest">Sin cambios pendientes</p>
+              </div>
+            )}
+          </div>
+        )}
+
+      </motion.div>
 
       {/* RIGHT SIDE - LIVE PREVIEW */}
       <div className="flex-1 flex flex-col bg-black relative">
