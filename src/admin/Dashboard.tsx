@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   LogOut, Layout, Phone, FolderKanban, Save, X, Plus, Trash2, 
-  Edit2, Users, Video, Play, Film, Shield, Menu, ChevronLeft, ChevronRight 
+  Edit2, Users, Video, Play, Film, Shield, Menu, ChevronLeft, ChevronRight,
+  History, Clock, Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
   const [activeTab, setActiveTab] = useState('home');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isNavExpanded, setIsNavExpanded] = useState(true);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [userEmail, setUserEmail] = useState<string | null>(propUserEmail || null);
 
@@ -326,6 +328,12 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
       if (usersRes.data) {
         setAllowedUsers(usersRes.data);
       }
+
+      // Fetch Audit Logs if user is IT
+      if (userEmail?.toLowerCase().trim() === 'it@corpocrea.com') {
+        const { data: logs } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
+        if (logs) setAuditLogs(logs);
+      }
     } catch (error) {
       console.error('Error fetching site data in Dashboard:', error);
     }
@@ -512,9 +520,11 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
           if (originalSettings.id) {
             const { error } = await supabase.from('site_settings').update(draftSettings).eq('id', originalSettings.id);
             if (error) throw error;
+            await addAuditLog('update_settings', 'Actualizó los ajustes generales del sitio');
           } else {
             const { error } = await supabase.from('site_settings').insert([draftSettings]);
             if (error) throw error;
+            await addAuditLog('create_settings', 'Creó los ajustes iniciales del sitio');
           }
           setOriginalSettings(draftSettings);
         } catch (settingsError: any) {
@@ -552,10 +562,12 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
         if (isUUID(projectDataToSave.id)) {
           const { error } = await supabase.from('projects').update(projectDataToSave).eq('id', projectDataToSave.id);
           if (error) throw error;
+          await addAuditLog('update_project', `Actualizó el proyecto: ${editingProject.title_en}`);
         } else {
           delete projectDataToSave.id;
           const { error } = await supabase.from('projects').insert([projectDataToSave]);
           if (error) throw error;
+          await addAuditLog('create_project', `Creó un nuevo proyecto: ${editingProject.title_en}`);
         }
         setEditingProject(null);
       }
@@ -576,10 +588,12 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
         if (isUUID(memberDataToSave.id)) {
           const { error } = await supabase.from('team_members').update(memberDataToSave).eq('id', memberDataToSave.id);
           if (error) throw error;
+          await addAuditLog('update_member', `Actualizó al miembro: ${editingMember.name}`);
         } else {
           delete memberDataToSave.id;
           const { error } = await supabase.from('team_members').insert([memberDataToSave]);
           if (error) throw error;
+          await addAuditLog('create_member', `Añadió un nuevo miembro: ${editingMember.name}`);
         }
         setEditingMember(null);
       }
@@ -620,10 +634,12 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
         if (isUUID(highlightDataToSave.id)) {
           const { error } = await supabase.from('highlights').update(highlightDataToSave).eq('id', highlightDataToSave.id);
           if (error) throw error;
+          await addAuditLog('update_highlight', `Actualizó el highlight: ${editingHighlight.title_en}`);
         } else {
           delete highlightDataToSave.id;
           const { error } = await supabase.from('highlights').insert([highlightDataToSave]);
           if (error) throw error;
+          await addAuditLog('create_highlight', `Creó un nuevo highlight: ${editingHighlight.title_en}`);
         }
         setEditingHighlight(null);
       }
@@ -673,6 +689,7 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
         if (isUUID(id)) {
           const { error, data } = await supabase.from('projects').delete().eq('id', id).select();
           if (error) throw error;
+          await addAuditLog('delete_project', `Eliminó el proyecto ID: ${id}`);
           
           if (!data || data.length === 0) {
              toast.error('No se pudo eliminar', { 
@@ -701,6 +718,7 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
       if (isUUID(id)) {
         const { error, data } = await supabase.from('team_members').delete().eq('id', id).select();
         if (error) throw error;
+        await addAuditLog('delete_member', `Eliminó al miembro ID: ${id}`);
 
         if (!data || data.length === 0) {
            toast.error('No se pudo eliminar', { 
@@ -743,6 +761,8 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
       
       if (error) throw error;
       
+      await addAuditLog('add_user', `Autorizó al usuario: ${newUserEmail}`);
+      
       toast.success('Acceso concedido');
       setNewUserEmail('');
       setNewUserName('');
@@ -758,6 +778,8 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
     try {
       const { error } = await supabase.from('allowed_users').delete().eq('id', id);
       if (error) throw error;
+      
+      await addAuditLog('remove_user', `Revocó acceso al usuario ID: ${id}`);
       
       toast.success('Acceso revocado');
       fetchData();
@@ -781,6 +803,19 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
     } finally {
       // Force reload to state before session
       window.location.href = window.location.origin + window.location.pathname;
+    }
+  };
+
+  const addAuditLog = async (action: string, description: string, payload: any = {}) => {
+    try {
+      await supabase.from('audit_logs').insert([{
+        user_email: userEmail,
+        action_type: action,
+        description: description,
+        payload: payload
+      }]);
+    } catch (err) {
+      console.error("Failed to add audit log:", err);
     }
   };
 
@@ -858,17 +893,29 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
           <div className="py-4 border-b border-white/10 flex flex-col items-center gap-4">
              <button 
                 onClick={() => setIsSidebarCollapsed(false)} 
-                className="p-2 text-gray-400 hover:text-white hover:bg-blue-500/10 hover:text-blue-400 rounded-full transition-all group"
-                title="Expandir Panel"
+                className="p-2 text-gray-400 hover:text-white hover:bg-blue-500/10 hover:text-blue-400 rounded-full transition-all group relative"
               >
                 <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Expandir Panel
+                </motion.div>
               </button>
               <button 
                 onClick={handleLogout} 
-                className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all active:scale-90" 
-                title="Salir"
+                className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all active:scale-90 relative group" 
               >
                 <LogOut size={16} />
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-red-900 border border-red-500/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Cerrar Sesión
+                </motion.div>
               </button>
           </div>
         )}
@@ -898,45 +945,105 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
           >
             <button 
               onClick={() => setActiveTab('home')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Layout size={16} className="flex-none"/>
-              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Inicio</span>}
+              {!isSidebarCollapsed ? (
+                <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Inicio</span>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Inicio
+                </motion.div>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('projects')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <FolderKanban size={16} className="flex-none"/>
-              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Proyectos</span>}
+              {!isSidebarCollapsed ? (
+                <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Proyectos</span>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Proyectos
+                </motion.div>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('team')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Users size={16} className="flex-none"/>
-              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Equipo</span>}
+              {!isSidebarCollapsed ? (
+                <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Equipo</span>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Equipo
+                </motion.div>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('highlights')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Layout size={16} className="flex-none"/>
-              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Highlights</span>}
+              {!isSidebarCollapsed ? (
+                <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Highlights</span>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Highlights
+                </motion.div>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('services')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Layout size={16} className="flex-none"/>
-              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Servicios</span>}
+              {!isSidebarCollapsed ? (
+                <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Servicios</span>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Servicios
+                </motion.div>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('contact')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Phone size={16} className="flex-none"/>
-              {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Contacto</span>}
+              {!isSidebarCollapsed ? (
+                <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Contacto</span>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  whileHover={{ opacity: 1, x: 10 }}
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                >
+                  Contacto
+                </motion.div>
+              )}
             </button>
 
             {/* Special Section for Admin Access */}
@@ -945,12 +1052,43 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
                 {!isSidebarCollapsed && <p className="px-3 text-[7px] uppercase tracking-[0.2em] text-blue-400 font-bold mb-1">Admin</p>}
                 <button 
                   onClick={() => setActiveTab('access')} 
-                  className={`w-full h-10 px-2 rounded-md transition-all flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
-                  title={isSidebarCollapsed ? "Gestionar Usuarios" : undefined}
+                  className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
+                  title={!isSidebarCollapsed ? undefined : undefined}
                 >
                   <Shield size={16} className="flex-none"/>
-                  {!isSidebarCollapsed && <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Usuarios</span>}
+                  {!isSidebarCollapsed ? (
+                    <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Usuarios</span>
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0, x: -10 }}
+                      whileHover={{ opacity: 1, x: 10 }}
+                      className="absolute left-full ml-4 px-3 py-1.5 bg-blue-900 border border-blue-400/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                    >
+                      Usuarios
+                    </motion.div>
+                  )}
                 </button>
+                
+                {userEmail?.toLowerCase().trim() === 'it@corpocrea.com' && (
+                  <button 
+                    onClick={() => setActiveTab('audit')} 
+                    className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'audit' ? 'bg-amber-600 text-white font-bold shadow-[0_0_20px_rgba(217,119,6,0.4)]' : 'text-amber-400/60 hover:text-amber-400 hover:bg-amber-600/10'}`}
+                    title={!isSidebarCollapsed ? undefined : undefined}
+                  >
+                    <History size={16} className="flex-none"/>
+                    {!isSidebarCollapsed ? (
+                      <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Historial</span>
+                    ) : (
+                      <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        whileHover={{ opacity: 1, x: 10 }}
+                        className="absolute left-full ml-4 px-3 py-1.5 bg-amber-900 border border-amber-400/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                      >
+                        Historial
+                      </motion.div>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </motion.nav>
@@ -2098,6 +2236,7 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
                                 try {
                                   if (isUUID(h.id)) {
                                     await supabase.from('highlights').delete().eq('id', h.id);
+                                    await addAuditLog('delete_highlight', `Eliminó el highlight: ${h.title_es || h.title}`);
                                   }
                                   await fetchData();
                                   toast.success('Highlight eliminado');
@@ -2469,6 +2608,64 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
                      </div>
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {(!activeEditor || ['project', 'member', 'filters', 'highlight', 'new_highlight'].includes(activeEditor.element)) && activeTab === 'audit' && userEmail?.toLowerCase().trim() === 'it@corpocrea.com' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-amber-500">Historial de Auditoría</h3>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">Seguimiento de cambios y actividad en la plataforma</p>
+                </div>
+                <button 
+                  onClick={() => fetchData()}
+                  className="p-2 text-amber-500 hover:bg-amber-500/10 rounded-full transition-all"
+                  title="Refrescar Historial"
+                >
+                  <History size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {auditLogs.length > 0 ? (
+                  auditLogs.map((log) => (
+                    <div key={log.id} className="bg-white/5 border border-white/5 hover:border-amber-500/20 rounded-xl p-4 transition-all group">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            log.action_type?.includes('create') ? 'bg-green-500/10 text-green-500' :
+                            log.action_type?.includes('delete') ? 'bg-red-500/10 text-red-500' :
+                            'bg-blue-500/10 text-blue-500'
+                          }`}>
+                            <Clock size={14} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-white font-bold uppercase tracking-widest mb-1">{log.description}</p>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[9px] text-gray-500 uppercase font-medium">{log.user_email}</span>
+                              <span className="w-1 h-1 rounded-full bg-white/10" />
+                              <span className="text-[9px] text-gray-600 uppercase font-medium">
+                                {new Date(log.created_at).toLocaleString('es-ES', { 
+                                  day: '2-digit', month: '2-digit', year: '2-digit',
+                                  hour: '2-digit', minute: '2-digit' 
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-[8px] bg-black/40 text-gray-500 border border-white/5 rounded px-2 py-0.5 uppercase tracking-tighter self-start font-mono group-hover:text-amber-500 transition-colors">
+                          {log.action_type}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl bg-black/20">
+                    <p className="text-[10px] text-gray-600 uppercase tracking-widest">No se han registrado cambios aún</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
