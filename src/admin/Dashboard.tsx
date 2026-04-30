@@ -767,9 +767,21 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
   };
 
   const handleLogout = async () => {
-    localStorage.removeItem('etc_demo_session');
-    await supabase.auth.signOut();
-    window.location.reload(); // Ensure clean state
+    try {
+      localStorage.removeItem('etc_demo_session');
+      // Clear all possible tokens to be sure
+      const iframeToken = 'sb-etc-preview-token';
+      const mainToken = 'sb-etc-main-token';
+      localStorage.removeItem(iframeToken);
+      localStorage.removeItem(mainToken);
+      
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Logout error:', err);
+    } finally {
+      // Force reload to state before session
+      window.location.href = window.location.origin + window.location.pathname;
+    }
   };
 
   const isDemo = localStorage.getItem('etc_demo_session') === 'true';
@@ -831,6 +843,13 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
               >
                 <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
               </button>
+              <button 
+                onClick={handleLogout} 
+                className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-all active:scale-90" 
+                title="Cerrar Sesión"
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           )}
         </div>
@@ -846,7 +865,7 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
               </button>
               <button 
                 onClick={handleLogout} 
-                className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all" 
+                className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all active:scale-90" 
                 title="Salir"
               >
                 <LogOut size={16} />
