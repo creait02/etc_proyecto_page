@@ -891,31 +891,27 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
 
         {isSidebarCollapsed && (
           <div className="py-4 border-b border-white/10 flex flex-col items-center gap-4">
-             <button 
+              <button 
                 onClick={() => setIsSidebarCollapsed(false)} 
                 className="p-2 text-gray-400 hover:text-white hover:bg-blue-500/10 hover:text-blue-400 rounded-full transition-all group relative"
               >
                 <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Expandir Panel
-                </motion.div>
+                </div>
               </button>
               <button 
                 onClick={handleLogout} 
                 className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all active:scale-90 relative group" 
               >
                 <LogOut size={16} />
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-red-900 border border-red-500/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-red-900 border border-red-500/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Cerrar Sesión
-                </motion.div>
+                </div>
               </button>
           </div>
         )}
@@ -941,108 +937,96 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
               height: !isSidebarCollapsed && !isNavExpanded ? 0 : 'auto',
               opacity: !isSidebarCollapsed && !isNavExpanded ? 0 : 1
             }}
-            className="px-2 py-2 space-y-1 overflow-hidden"
+            className={`px-2 py-2 space-y-1 ${isSidebarCollapsed ? 'overflow-visible' : 'overflow-hidden'}`}
           >
             <button 
               onClick={() => setActiveTab('home')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'home' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Layout size={16} className="flex-none"/>
               {!isSidebarCollapsed ? (
                 <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Inicio</span>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Inicio
-                </motion.div>
+                </div>
               )}
             </button>
             <button 
               onClick={() => setActiveTab('projects')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <FolderKanban size={16} className="flex-none"/>
               {!isSidebarCollapsed ? (
                 <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Proyectos</span>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Proyectos
-                </motion.div>
+                </div>
               )}
             </button>
             <button 
               onClick={() => setActiveTab('team')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'team' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Users size={16} className="flex-none"/>
               {!isSidebarCollapsed ? (
                 <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Equipo</span>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Equipo
-                </motion.div>
+                </div>
               )}
             </button>
             <button 
               onClick={() => setActiveTab('highlights')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'highlights' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Layout size={16} className="flex-none"/>
               {!isSidebarCollapsed ? (
                 <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Highlights</span>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Highlights
-                </motion.div>
+                </div>
               )}
             </button>
             <button 
               onClick={() => setActiveTab('services')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'services' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Layout size={16} className="flex-none"/>
               {!isSidebarCollapsed ? (
                 <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Servicios</span>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Servicios
-                </motion.div>
+                </div>
               )}
             </button>
             <button 
               onClick={() => setActiveTab('contact')} 
-              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'contact' ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               <Phone size={16} className="flex-none"/>
               {!isSidebarCollapsed ? (
                 <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Contacto</span>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  whileHover={{ opacity: 1, x: 10 }}
-                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                <div 
+                  className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                 >
                   Contacto
-                </motion.div>
+                </div>
               )}
             </button>
 
@@ -1052,40 +1036,34 @@ export default function Dashboard({ userEmail: propUserEmail }: { userEmail?: st
                 {!isSidebarCollapsed && <p className="px-3 text-[7px] uppercase tracking-[0.2em] text-blue-400 font-bold mb-1">Admin</p>}
                 <button 
                   onClick={() => setActiveTab('access')} 
-                  className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
-                  title={!isSidebarCollapsed ? undefined : undefined}
+                  className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'access' ? 'bg-blue-600 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'text-blue-400/60 hover:text-blue-400 hover:bg-blue-600/10'}`}
                 >
                   <Shield size={16} className="flex-none"/>
                   {!isSidebarCollapsed ? (
                     <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Usuarios</span>
                   ) : (
-                    <motion.div 
-                      initial={{ opacity: 0, x: -10 }}
-                      whileHover={{ opacity: 1, x: 10 }}
-                      className="absolute left-full ml-4 px-3 py-1.5 bg-blue-900 border border-blue-400/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                    <div 
+                      className="absolute left-full ml-4 px-3 py-1.5 bg-blue-900 border border-blue-400/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                     >
                       Usuarios
-                    </motion.div>
+                    </div>
                   )}
                 </button>
                 
                 {userEmail?.toLowerCase().trim() === 'it@corpocrea.com' && (
                   <button 
                     onClick={() => setActiveTab('audit')} 
-                    className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group/btn ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'audit' ? 'bg-amber-600 text-white font-bold shadow-[0_0_20px_rgba(217,119,6,0.4)]' : 'text-amber-400/60 hover:text-amber-400 hover:bg-amber-600/10'}`}
-                    title={!isSidebarCollapsed ? undefined : undefined}
+                    className={`w-full h-10 px-2 rounded-md transition-all flex items-center relative group ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'} ${activeTab === 'audit' ? 'bg-amber-600 text-white font-bold shadow-[0_0_20px_rgba(217,119,6,0.4)]' : 'text-amber-400/60 hover:text-amber-400 hover:bg-amber-600/10'}`}
                   >
                     <History size={16} className="flex-none"/>
                     {!isSidebarCollapsed ? (
                       <span className="text-[10px] uppercase tracking-widest overflow-hidden whitespace-nowrap">Historial</span>
                     ) : (
-                      <motion.div 
-                        initial={{ opacity: 0, x: -10 }}
-                        whileHover={{ opacity: 1, x: 10 }}
-                        className="absolute left-full ml-4 px-3 py-1.5 bg-amber-900 border border-amber-400/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl"
+                      <div 
+                        className="absolute left-full ml-4 px-3 py-1.5 bg-amber-900 border border-amber-400/30 rounded text-[9px] uppercase tracking-widest text-white pointer-events-none z-50 whitespace-nowrap shadow-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300"
                       >
                         Historial
-                      </motion.div>
+                      </div>
                     )}
                   </button>
                 )}
